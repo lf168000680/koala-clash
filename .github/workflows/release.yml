@@ -239,6 +239,51 @@ jobs:
               fi
           done
 
+      - name: Rename macOS Updater Files with Architecture Prefix
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          MACOS_DIR="src-tauri/target/${{ matrix.target }}/release/bundle/macos"
+          
+          if [ ! -d "$MACOS_DIR" ]; then
+              echo "macOS bundle directory not found, skipping"
+              exit 0
+          fi
+          
+          # Determine architecture suffix
+          if [ "${{ matrix.target }}" == "aarch64-apple-darwin" ]; then
+              ARCH_SUFFIX="_aarch64"
+          elif [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+              ARCH_SUFFIX="_x64"
+          else
+              echo "Unknown target: ${{ matrix.target }}"
+              exit 1
+          fi
+          
+          # Rename .app.tar.gz files
+          find "$MACOS_DIR" -type f -name "*.app.tar.gz" ! -name "*.app.tar.gz.sig" -print0 | while IFS= read -r -d '' old_path; do
+              dir_path=$(dirname "$old_path")
+              old_filename=$(basename "$old_path")
+              new_filename=$(echo "$old_filename" | sed -E "s/\.app\.tar\.gz$/${ARCH_SUFFIX}.app.tar.gz/")
+              new_path="${dir_path}/${new_filename}"
+              if [ "$old_path" != "$new_path" ]; then
+                  echo "Renaming updater: '$old_filename' -> '$new_filename'"
+                  mv "$old_path" "$new_path"
+              fi
+          done
+          
+          # Rename .app.tar.gz.sig files
+          find "$MACOS_DIR" -type f -name "*.app.tar.gz.sig" -print0 | while IFS= read -r -d '' old_path; do
+              dir_path=$(dirname "$old_path")
+              old_filename=$(basename "$old_path")
+              new_filename=$(echo "$old_filename" | sed -E "s/\.app\.tar\.gz\.sig$/${ARCH_SUFFIX}.app.tar.gz.sig/")
+              new_path="${dir_path}/${new_filename}"
+              if [ "$old_path" != "$new_path" ]; then
+                  echo "Renaming signature: '$old_filename' -> '$new_filename'"
+                  mv "$old_path" "$new_path"
+              fi
+          done
+
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
