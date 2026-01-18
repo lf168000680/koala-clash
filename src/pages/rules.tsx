@@ -8,6 +8,7 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useAppData } from "@/providers/app-data-provider";
+import { useProfiles } from "@/hooks/use-profiles";
 import { useVisibility } from "@/hooks/use-visibility";
 import { cn } from "@root/lib/utils";
 
@@ -16,13 +17,19 @@ import RuleItem from "@/components/rule/rule-item";
 import { ProviderButton } from "@/components/rule/provider-button";
 import { BaseSearchBox } from "@/components/base/base-search-box";
 import { ScrollTopButton } from "@/components/layout/scroll-top-button";
+import { RulesEditorViewer } from "@/components/profile/rules-editor-viewer";
+import { enhanceProfiles } from "@/services/cmds";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 
 const RulesPage = () => {
   const { t } = useTranslation();
   const { rules = [], refreshRules, refreshRuleProviders } = useAppData();
+  const { current, mutateProfiles } = useProfiles();
   const [match, setMatch] = useState(() => (_: string) => true);
+  const [editorOpen, setEditorOpen] = useState(false);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -85,6 +92,16 @@ const RulesPage = () => {
               <BaseSearchBox onSearch={handleSearch} />
             </div>
             <ProviderButton />
+            {current?.option?.rules && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setEditorOpen(true)}
+                title={t("Edit Rules")}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -107,6 +124,22 @@ const RulesPage = () => {
         )}
       </div>
       <ScrollTopButton onClick={scrollToTop} show={showScrollTop} />
+
+      {current && editorOpen && (
+        <RulesEditorViewer
+          open={true}
+          onClose={() => setEditorOpen(false)}
+          profileUid={current.uid ?? ""}
+          property={current.option?.rules ?? ""}
+          groupsUid={current.option?.groups ?? ""}
+          mergeUid={current.option?.merge ?? ""}
+          onSave={async () => {
+            mutateProfiles();
+            await enhanceProfiles();
+            refreshRules();
+          }}
+        />
+      )}
     </div>
   );
 };
