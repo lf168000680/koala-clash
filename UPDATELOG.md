@@ -1,3 +1,11 @@
+## v0.2.9
+
+- fixed issue with hwid limit
+- new homepage
+- added the ability to sort in the connections table
+- added a button for editing rules on the “Rules” page
+- updated Mihomo core to v1.19.19
+
 ## v0.2.8
 
 - fixed issue with error 0xc00000142 when shutting down the computer
