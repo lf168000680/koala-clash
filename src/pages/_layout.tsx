@@ -52,12 +52,10 @@ const handleNoticeMessage = (
       break;
     case "import_sub_url::error":
       console.log(msg);
-      if (
-        msg.toLowerCase().includes("device") ||
-        msg.toLowerCase().includes("устройств")
-      ) {
+      if (msg.startsWith("HWID_LIMIT:")) {
+        const hwidMessage = msg.replace("HWID_LIMIT:", "");
         window.dispatchEvent(
-          new CustomEvent("show-hwid-error", { detail: msg }),
+          new CustomEvent("show-hwid-error", { detail: hwidMessage }),
         );
       } else {
         showNotice("error", msg);

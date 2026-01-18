@@ -171,13 +171,10 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
       } catch (err: any) {
         const errorMessage =
           typeof err === "string" ? err : err.message || String(err);
-        const lowerErrorMessage = errorMessage.toLowerCase();
-        if (
-          lowerErrorMessage.includes("device") ||
-          lowerErrorMessage.includes("устройств")
-        ) {
+        if (errorMessage.startsWith("HWID_LIMIT:")) {
+          const hwidMessage = errorMessage.replace("HWID_LIMIT:", "");
           window.dispatchEvent(
-            new CustomEvent("show-hwid-error", { detail: errorMessage }),
+            new CustomEvent("show-hwid-error", { detail: hwidMessage }),
           );
         } else if (!isShareLink && errorMessage.includes("failed to fetch")) {
           showNotice("info", t("Import failed, retrying with Clash proxy..."));

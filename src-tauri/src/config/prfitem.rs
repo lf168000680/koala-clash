@@ -418,11 +418,18 @@ impl PrfItem {
             None => None,
         };
 
-        if let Some(announce_msg) = &announce {
-            let lower_msg = announce_msg.to_lowercase();
-            if lower_msg.contains("device") || lower_msg.contains("устройств") {
-                bail!(announce_msg.clone());
-            }
+        // Check for HWID limit header
+        let hwid_limit = header
+            .get("x-hwid-limit")
+            .and_then(|v| v.to_str().ok())
+            .map(|v| v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+
+        if hwid_limit {
+            let msg = announce
+                .clone()
+                .unwrap_or_else(|| "Device limit reached".to_string());
+            bail!("HWID_LIMIT:{}", msg);
         }
 
         let announce_url = match header.get("announce-url") {
