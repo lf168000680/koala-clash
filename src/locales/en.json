@@ -690,5 +690,19 @@
   "No profiles available": "No profiles available",
   "Configuration saved successfully": "Configuration saved successfully",
   "Connection Details": "Connection Details",
-  "Add": "Add"
+  "Add": "Add",
+  "No selection": "No selection",
+  "By Delay": "By Delay",
+  "By Name": "By Name",
+  "Default": "Default",
+  "Proxy Selection": "Proxy Selection",
+  "Direct mode is active": "Direct mode is active",
+  "All traffic bypasses proxy": "All traffic bypasses proxy",
+  "Latency": "Latency",
+  "No proxy groups available": "No proxy groups available",
+  "Direct connection": "Direct connection",
+  "Failed to toggle proxy": "Failed to toggle proxy",
+  "Add a profile to start using the VPN": "Add a profile to start using the VPN",
+  "TUN mode requires the system service to be installed": "TUN mode requires the system service to be installed",
+  "Toggle Proxy": "Toggle Proxy"
 }

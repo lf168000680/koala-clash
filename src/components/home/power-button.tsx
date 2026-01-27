@@ -1,9 +1,13 @@
 import React from "react";
-import { motion, AnimatePresence, Transition, HTMLMotionProps } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  Transition,
+  HTMLMotionProps,
+} from "framer-motion";
 import { cn } from "@root/lib/utils";
 
-export interface PowerButtonProps
-  extends HTMLMotionProps<"button"> {
+export interface PowerButtonProps extends HTMLMotionProps<"button"> {
   checked?: boolean;
   loading?: boolean;
 }
@@ -13,8 +17,15 @@ export const PowerButton = React.forwardRef<
   PowerButtonProps
 >(
   (
-    { className, checked = false, loading = false, disabled, onClick, ...props },
-    ref
+    {
+      className,
+      checked = false,
+      loading = false,
+      disabled,
+      onClick,
+      ...props
+    },
+    ref,
   ) => {
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (!loading && !disabled && onClick) {
@@ -39,42 +50,49 @@ export const PowerButton = React.forwardRef<
         iconFilter: "none",
       },
       on: {
-        bg: "rgb(146, 180, 184)",
-        border: "rgb(255, 255, 255)",
+        bg: "rgba(146, 180, 184, 0.7)",
+        border: "rgba(255, 255, 255, 0.8)",
         shadow:
-          "0px 0px 2px rgb(151, 243, 255) inset, 0px 0px 4px rgb(151, 243, 255) inset, 0px 0px 20px rgb(151, 243, 255) inset, 0px 0px 80px rgb(151, 243, 255), 0px 0px 200px rgb(151, 243, 255), 0px 0px 10px rgb(151, 243, 255)",
+          "0px 0px 4px rgba(151, 243, 255, 0.6) inset, 0px 0px 15px rgba(151, 243, 255, 0.5) inset, 0px 0px 40px rgba(151, 243, 255, 0.4), 0px 0px 80px rgba(151, 243, 255, 0.25)",
         iconFill: "rgb(255, 255, 255)",
-        iconFilter: "drop-shadow(0px 0px 10px rgb(151, 243, 255))",
+        iconFilter: "drop-shadow(0px 0px 8px rgba(151, 243, 255, 0.8))",
       },
     };
 
     const glowColors = {
-        on: "rgba(151, 243, 255, 0.6)",
-        off: "transparent",
+      on: "rgba(151, 243, 255, 0.45)",
+      off: "transparent",
     };
 
     return (
-      <div className={cn("relative flex items-center justify-center w-[200px] h-[200px]", className)}>
+      <div
+        className={cn(
+          "relative flex items-center justify-center w-[200px] h-[200px]",
+          className,
+        )}
+      >
         {/* Outer Glow */}
-         <motion.div
-            className="absolute h-28 w-28 rounded-full blur-3xl pointer-events-none"
-            animate={{
-                backgroundColor: checked ? glowColors.on : glowColors.off,
-                opacity: disabled ? 0 : checked ? 1 : 0,
-                scale: checked ? 1.2 : 0.8,
-            }}
-            transition={sharedSpring}
+        <motion.div
+          className="absolute h-32 w-32 rounded-full blur-3xl pointer-events-none"
+          animate={{
+            backgroundColor: checked ? glowColors.on : glowColors.off,
+            opacity: disabled ? 0 : checked ? 1 : 0,
+            scale: checked ? 1.2 : 0.8,
+          }}
+          transition={sharedSpring}
         />
 
         {/* Inner Glow */}
         <motion.div
-            className="absolute h-40 w-40 rounded-full blur-[60px] pointer-events-none"
-            animate={{
-                backgroundColor: checked ? "rgba(151, 243, 255, 0.2)" : "transparent",
-                opacity: disabled ? 0 : checked ? 0.8 : 0,
-                scale: checked ? 1.4 : 0.6,
-            }}
-            transition={sharedSpring}
+          className="absolute h-44 w-44 rounded-full blur-[60px] pointer-events-none"
+          animate={{
+            backgroundColor: checked
+              ? "rgba(151, 243, 255, 0.2)"
+              : "transparent",
+            opacity: disabled ? 0 : checked ? 0.75 : 0,
+            scale: checked ? 1.4 : 0.6,
+          }}
+          transition={sharedSpring}
         />
 
         <motion.button
@@ -87,14 +105,14 @@ export const PowerButton = React.forwardRef<
             backgroundColor: checked ? colors.on.bg : colors.off.bg,
             borderColor: checked ? colors.on.border : colors.off.border,
             boxShadow: checked ? colors.on.shadow : colors.off.shadow,
-            scale: checked ? 1.05 : 1, 
+            scale: checked ? 1.05 : 1,
           }}
           whileTap={{ scale: 0.95 }}
           whileHover={{ scale: checked ? 1.1 : 1.02 }}
           transition={sharedSpring}
           className={cn(
             "relative z-10 flex items-center justify-center w-[140px] h-[140px] rounded-full border-4 cursor-pointer outline-none",
-            disabled && !loading && "cursor-not-allowed opacity-50 grayscale"
+            disabled && !loading && "cursor-not-allowed opacity-50 grayscale",
           )}
           {...props}
         >
@@ -103,7 +121,7 @@ export const PowerButton = React.forwardRef<
             viewBox="0 0 512 512"
             className="w-[2.4em] h-[2.4em]"
             animate={{
-                filter: checked ? colors.on.iconFilter : colors.off.iconFilter
+              filter: checked ? colors.on.iconFilter : colors.off.iconFilter,
             }}
             transition={sharedSpring}
           >
@@ -127,18 +145,20 @@ export const PowerButton = React.forwardRef<
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-               <div
-                  className="w-[140px] h-[140px] rounded-full border-8 border-transparent animate-spin"
-                  style={{
-                    borderTopColor: checked ? "rgb(151, 243, 255)" : "rgb(239, 68, 68)"
-                  }}
-                />
+              <div
+                className="w-[140px] h-[140px] rounded-full border-8 border-transparent animate-spin"
+                style={{
+                  borderTopColor: checked
+                    ? "rgb(151, 243, 255)"
+                    : "rgb(239, 68, 68)",
+                }}
+              />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
     );
-  }
+  },
 );
 
 PowerButton.displayName = "PowerButton";

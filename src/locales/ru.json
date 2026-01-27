@@ -690,5 +690,19 @@
   "No profiles available": "Нет доступных профилей",
   "Configuration saved successfully": "Конфигурация успешно сохранена",
   "Connection Details": "Сведения о подключении",
-  "Add": "Добавить"
+  "Add": "Добавить",
+  "No selection": "Не выбрано",
+  "By Delay": "По задержке",
+  "By Name": "По имени",
+  "Default": "По умолчанию",
+  "Proxy Selection": "Выбор прокси",
+  "Direct mode is active": "Активен прямой режим",
+  "All traffic bypasses proxy": "Весь трафик идёт напрямую",
+  "Latency": "Задержка",
+  "No proxy groups available": "Нет доступных групп прокси",
+  "Direct connection": "Прямое соединение",
+  "Failed to toggle proxy": "Не удалось переключить прокси",
+  "Add a profile to start using the VPN": "Добавьте профиль, чтобы начать использовать VPN",
+  "TUN mode requires the system service to be installed": "Режим TUN требует установки системной службы",
+  "Toggle Proxy": "Переключить прокси"
 }
