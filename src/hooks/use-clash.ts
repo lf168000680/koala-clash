@@ -74,8 +74,8 @@ export const useClashInfo = () => {
       if (port < 1111) {
         throw new Error("The port should not < 1111");
       }
-      if (port > 65536) {
-        throw new Error("The port should not > 65536");
+      if (port > 65535) {
+        throw new Error("The port should not > 65535");
       }
     }
 
@@ -84,8 +84,8 @@ export const useClashInfo = () => {
       if (port < 1111) {
         throw new Error("The port should not < 1111");
       }
-      if (port > 65536) {
-        throw new Error("The port should not > 65536");
+      if (port > 65535) {
+        throw new Error("The port should not > 65535");
       }
     }
 
@@ -94,8 +94,8 @@ export const useClashInfo = () => {
       if (port < 1111) {
         throw new Error("The port should not < 1111");
       }
-      if (port > 65536) {
-        throw new Error("The port should not > 65536");
+      if (port > 65535) {
+        throw new Error("The port should not > 65535");
       }
     }
 
@@ -104,8 +104,8 @@ export const useClashInfo = () => {
       if (port < 1111) {
         throw new Error("The port should not < 1111");
       }
-      if (port > 65536) {
-        throw new Error("The port should not > 65536");
+      if (port > 65535) {
+        throw new Error("The port should not > 65535");
       }
     }
 
@@ -114,8 +114,8 @@ export const useClashInfo = () => {
       if (port < 1111) {
         throw new Error("The port should not < 1111");
       }
-      if (port > 65536) {
-        throw new Error("The port should not > 65536");
+      if (port > 65535) {
+        throw new Error("The port should not > 65535");
       }
     }
 

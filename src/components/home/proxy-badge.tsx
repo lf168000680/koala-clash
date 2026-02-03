@@ -136,10 +136,7 @@ export const ProxyBadge: React.FC = () => {
                 )}
               />
               <span
-                className={cn(
-                  "text-xs font-mono",
-                  getDelayColor(currentDelay),
-                )}
+                className={cn("text-xs font-mono", getDelayColor(currentDelay))}
               >
                 {delayText}
               </span>

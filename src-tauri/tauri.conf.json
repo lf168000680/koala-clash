@@ -11,15 +11,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "resources",
-      "resources/locales/*"
-    ],
+    "resources": ["resources", "resources/locales/*"],
     "publisher": "Koala Clash",
-    "externalBin": [
-      "sidecar/koala-mihomo",
-      "sidecar/koala-mihomo-alpha"
-    ],
+    "externalBin": ["sidecar/koala-mihomo", "sidecar/koala-mihomo-alpha"],
     "copyright": "GNU General Public License v3.0",
     "category": "DeveloperTool",
     "shortDescription": "Koala Clash",
@@ -35,15 +29,13 @@
       "nsis": {
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
-        "languages": [
-          "SimpChinese"
-        ],
+        "languages": ["SimpChinese"],
         "installMode": "perMachine"
       }
     }
   },
   "build": {
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "pnpm run web:build",
     "frontendDist": "../dist",
     "beforeDevCommand": "pnpm run web:dev",
     "devUrl": "http://localhost:3000/"
@@ -53,25 +45,15 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": [
-          "clash",
-          "koala-clash"
-        ]
+        "schemes": ["clash", "koala-clash"]
       }
     }
   },
   "app": {
     "security": {
-      "capabilities": [
-        "desktop-capability",
-        "migrated"
-      ],
+      "capabilities": ["desktop-capability", "migrated"],
       "assetProtocol": {
-        "scope": [
-          "$APPDATA/**",
-          "$RESOURCE/../**",
-          "**"
-        ],
+        "scope": ["$APPDATA/**", "$RESOURCE/../**", "**"],
         "enable": true
       },
       "csp": null

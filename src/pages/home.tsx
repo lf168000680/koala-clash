@@ -172,9 +172,7 @@ const MinimalHomePage: React.FC = () => {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime-500/10 flex items-center justify-center">
                 <PlusCircle className="h-8 w-8 text-lime-500" />
               </div>
-              <h1 className="text-2xl font-medium mb-2">
-                {t("Get Started")}
-              </h1>
+              <h1 className="text-2xl font-medium mb-2">{t("Get Started")}</h1>
               <p className="text-muted-foreground text-sm">
                 {t("Add a profile to start using the VPN")}
               </p>

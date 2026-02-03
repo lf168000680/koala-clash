@@ -244,9 +244,7 @@ const GroupRow: React.FC<{
             </span>
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground/80">
-            <span className="truncate">
-              {localNow || t("No selection")}
-            </span>
+            <span className="truncate">{localNow || t("No selection")}</span>
           </div>
         </div>
       </button>
