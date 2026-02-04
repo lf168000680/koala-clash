@@ -1,32 +1,29 @@
-import LogsPage from "./logs";
-import ProxiesPage from "./proxies";
-import ProfilesPage from "./profiles";
-import SettingsPage from "./settings";
-import ConnectionsPage from "./connections";
-import RulesPage from "./rules";
-// import HomePage from "./home"; // Удаляем импорт старой HomePage
-import UnlockPage from "./unlock";
-import MinimalHomePage from "./home";
-import { BaseErrorBoundary } from "@/components/base";
-
-import HomeSvg from "@/assets/image/itemicon/home.svg?react";
-import ProxiesSvg from "@/assets/image/itemicon/proxies.svg?react";
-import ProfilesSvg from "@/assets/image/itemicon/profiles.svg?react";
-import ConnectionsSvg from "@/assets/image/itemicon/connections.svg?react";
-import RulesSvg from "@/assets/image/itemicon/rules.svg?react";
-import LogsSvg from "@/assets/image/itemicon/logs.svg?react";
-import UnlockSvg from "@/assets/image/itemicon/unlock.svg?react";
-import SettingsSvg from "@/assets/image/itemicon/settings.svg?react";
-
-import WifiRoundedIcon from "@mui/icons-material/WifiRounded";
-import DnsRoundedIcon from "@mui/icons-material/DnsRounded";
-import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
-import ForkRightRoundedIcon from "@mui/icons-material/ForkRightRounded";
-import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
+import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
+import { BaseErrorBoundary } from "@/components/base";
+import { Loader2 } from "lucide-react";
+
+// Lazy load pages
+const MinimalHomePage = lazy(() => import("./home"));
+const ProxiesPage = lazy(() => import("./proxies"));
+const ProfilesPage = lazy(() => import("./profiles"));
+const ConnectionsPage = lazy(() => import("./connections"));
+const RulesPage = lazy(() => import("./rules"));
+const LogsPage = lazy(() => import("./logs"));
+const UnlockPage = lazy(() => import("./unlock"));
+const SettingsPage = lazy(() => import("./settings"));
+
+const PageLoader = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  </div>
+);
+
+const withSuspense = (Component: React.ComponentType) => (
+  <Suspense fallback={<PageLoader />}>
+    <Component />
+  </Suspense>
+);
 
 export const routers = [
   {
@@ -34,52 +31,44 @@ export const routers = [
     element: <Navigate to="/home" replace />,
   },
   {
-    label: "Label-Home", // Изменяем label для главной страницы (если нужно)
+    label: "Label-Home",
     path: "/home",
-    icon: [<HomeRoundedIcon />, <HomeSvg />],
-    element: <MinimalHomePage />,
+    element: withSuspense(MinimalHomePage),
   },
   {
     label: "Label-Proxies",
     path: "/proxies",
-    icon: [<WifiRoundedIcon />, <ProxiesSvg />],
-    element: <ProxiesPage />,
+    element: withSuspense(ProxiesPage),
   },
   {
     label: "Label-Profiles",
     path: "/profile",
-    icon: [<DnsRoundedIcon />, <ProfilesSvg />],
-    element: <ProfilesPage />,
+    element: withSuspense(ProfilesPage),
   },
   {
     label: "Label-Connections",
     path: "/connections",
-    icon: [<LanguageRoundedIcon />, <ConnectionsSvg />],
-    element: <ConnectionsPage />,
+    element: withSuspense(ConnectionsPage),
   },
   {
     label: "Label-Rules",
     path: "/rules",
-    icon: [<ForkRightRoundedIcon />, <RulesSvg />],
-    element: <RulesPage />,
+    element: withSuspense(RulesPage),
   },
   {
     label: "Label-Logs",
     path: "/logs",
-    icon: [<SubjectRoundedIcon />, <LogsSvg />],
-    element: <LogsPage />,
+    element: withSuspense(LogsPage),
   },
   {
     label: "Label-Unlock",
     path: "/unlock",
-    icon: [<LockOpenRoundedIcon />, <UnlockSvg />],
-    element: <UnlockPage />,
+    element: withSuspense(UnlockPage),
   },
   {
     label: "Label-Settings",
     path: "/settings",
-    icon: [<SettingsRoundedIcon />, <SettingsSvg />],
-    element: <SettingsPage />,
+    element: withSuspense(SettingsPage),
   },
 ].map((router) => ({
   ...router,

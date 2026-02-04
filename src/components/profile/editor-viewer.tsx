@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState, Suspense, lazy } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { useThemeMode } from "@/services/states";
@@ -6,16 +6,8 @@ import { nanoid } from "nanoid";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { showNotice } from "@/services/noticeService";
 import getSystem from "@/utils/get-system";
-import debounce from "@/utils/debounce";
+import { debounce } from "lodash-es";
 
-// --- Новые импорты ---
-import * as monaco from "monaco-editor";
-import MonacoEditor from "react-monaco-editor";
-import { configureMonacoYaml } from "monaco-yaml";
-import { type JSONSchema7 } from "json-schema";
-import metaSchema from "meta-json-schema/schemas/meta-json-schema.json";
-import mergeSchema from "meta-json-schema/schemas/clash-verge-merge-json-schema.json";
-import pac from "types-pac/pac.d.ts?raw";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,11 +23,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Wand2, Maximize, Minimize } from "lucide-react";
+import { Wand2, Maximize, Minimize, Loader2 } from "lucide-react";
+
+const LazyMonacoEditor = lazy(() => import("@/components/base/lazy-monaco-editor"));
 
 const appWindow = getCurrentWebviewWindow();
 
-// --- Типы и интерфейсы (без изменений) ---
 type Language = "yaml" | "javascript" | "css";
 type Schema<T extends Language> = LanguageSchemaMap[T];
 interface LanguageSchemaMap {
@@ -56,34 +49,6 @@ interface Props<T extends Language> {
   onClose: () => void;
 }
 
-// --- Логика инициализации Monaco (без изменений) ---
-let initialized = false;
-const monacoInitialization = () => {
-  if (initialized) return;
-
-  configureMonacoYaml(monaco, {
-    validate: true,
-    enableSchemaRequest: true,
-    schemas: [
-      {
-        uri: "http://example.com/meta-json-schema.json",
-        fileMatch: ["**/*.clash.yaml"],
-        // @ts-ignore
-        schema: metaSchema as JSONSchema7,
-      },
-      {
-        uri: "http://example.com/clash-verge-merge-json-schema.json",
-        fileMatch: ["**/*.merge.yaml"],
-        // @ts-ignore
-        schema: mergeSchema as JSONSchema7,
-      },
-    ],
-  });
-  monaco.languages.typescript.javascriptDefaults.addExtraLib(pac, "pac.d.ts");
-
-  initialized = true;
-};
-
 export const EditorViewer = <T extends Language>(props: Props<T>) => {
   const { t } = useTranslation();
   const themeMode = useThemeMode();
@@ -101,16 +66,13 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
     onClose,
   } = props;
 
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(undefined);
+  const editorRef = useRef<any>(undefined);
   const prevData = useRef<string | undefined>("");
   const currData = useRef<string | undefined>("");
 
-  const editorWillMount = () => {
-    monacoInitialization(); // initialize monaco
-  };
-
   const editorDidMount = async (
-    editor: monaco.editor.IStandaloneCodeEditor,
+    editor: any,
+    monaco: any
   ) => {
     editorRef.current = editor;
 
@@ -184,29 +146,30 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
         </DialogHeader>
 
         <div className="flex-1 min-h-0 relative px-6">
-          <MonacoEditor
-            height="100%"
-            language={language}
-            theme={themeMode === "light" ? "vs" : "vs-dark"}
-            options={{
-              tabSize: 2,
-              minimap: {
-                enabled: document.documentElement.clientWidth >= 1500,
-              },
-              mouseWheelZoom: true,
-              readOnly: readOnly,
-              quickSuggestions: { strings: true, comments: true, other: true },
-              padding: { top: 16 },
-              fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
-                getSystem() === "windows" ? ", twemoji mozilla" : ""
-              }`,
-              fontLigatures: false,
-              smoothScrolling: true,
-            }}
-            editorWillMount={editorWillMount}
-            editorDidMount={editorDidMount}
-            onChange={handleChange}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="animate-spin" /></div>}>
+            <LazyMonacoEditor
+              height="100%"
+              language={language}
+              theme={themeMode === "light" ? "vs" : "vs-dark"}
+              options={{
+                tabSize: 2,
+                minimap: {
+                  enabled: document.documentElement.clientWidth >= 1500,
+                },
+                mouseWheelZoom: true,
+                readOnly: readOnly,
+                quickSuggestions: { strings: true, comments: true, other: true },
+                padding: { top: 16 },
+                fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
+                  getSystem() === "windows" ? ", twemoji mozilla" : ""
+                }`,
+                fontLigatures: false,
+                smoothScrolling: true,
+              }}
+              editorDidMount={editorDidMount}
+              onChange={handleChange}
+            />
+          </Suspense>
           <div className="absolute bottom-4 left-8 z-10 flex gap-2">
             <TooltipProvider>
               <Tooltip>

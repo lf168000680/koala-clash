@@ -108,16 +108,6 @@ export default defineConfig({
               return "tauri-plugins";
             }
 
-            // Material UI libraries (grouped together)
-            if (
-              id.includes("@mui/material") ||
-              id.includes("@mui/icons-material") ||
-              id.includes("@mui/lab") ||
-              id.includes("@mui/x-data-grid")
-            ) {
-              return "mui";
-            }
-
             // Small vendor packages
             const pkg = id.match(/node_modules\/([^\/]+)/)?.[1];
             if (pkg && pkg.length < 8) return "small-vendors";

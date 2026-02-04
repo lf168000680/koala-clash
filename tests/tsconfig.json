@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "types": [
+      "node",
+      "@wdio/globals",
+      "@wdio/mocha-framework",
+      "expect-webdriverio",
+      "webdriverio"
+    ]
+  },
+  "include": [
+    "./**/*.ts",
+    "../wdio.conf.ts"
+  ]
+}

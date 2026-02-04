@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLockFn } from "ahooks";
 import { proxyProviderUpdate } from "@/services/api";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import { showNotice } from "@/services/noticeService";
 import { Database, RefreshCw } from "lucide-react";
 import dayjs from "dayjs";
@@ -42,7 +42,7 @@ const parseExpire = (expire?: number) => {
 export const ProviderButton = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const { proxyProviders, refreshProxy, refreshProxyProviders } = useAppData();
+  const { proxyProviders, refreshProxy, refreshProxyProviders } = useAppStatic();
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
 
   // 检查是否有提供者
@@ -161,9 +161,9 @@ export const ProviderButton = () => {
               const progress =
                 total > 0
                   ? Math.min(
-                      Math.round(((download + upload) * 100) / total) + 1,
-                      100,
-                    )
+                    Math.round(((download + upload) * 100) / total) + 1,
+                    100,
+                  )
                   : 0;
 
               const TypeBoxDisplay = ({

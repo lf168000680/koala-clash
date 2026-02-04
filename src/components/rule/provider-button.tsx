@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLockFn } from "ahooks";
 import dayjs from "dayjs";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import { ruleProviderUpdate } from "@/services/api";
 import { showNotice } from "@/services/noticeService";
 
@@ -41,7 +41,7 @@ interface RuleProviderItem {
 export const ProviderButton = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const { ruleProviders, refreshRules, refreshRuleProviders } = useAppData();
+  const { ruleProviders, refreshRules, refreshRuleProviders } = useAppStatic();
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
 
   const hasProviders = ruleProviders && Object.keys(ruleProviders).length > 0;

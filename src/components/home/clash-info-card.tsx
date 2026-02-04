@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Typography, Stack, Divider } from "@mui/material";
-import { DeveloperBoardOutlined } from "@mui/icons-material";
+import { Cpu } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { useClash } from "@/hooks/use-clash";
 import { EnhancedCard } from "./enhanced-card";
 import { useMemo } from "react";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic, useAppRealtime } from "@/providers/app-data-provider";
 
 // 将毫秒转换为时:分:秒格式的函数
 const formatUptime = (uptimeMs: number) => {
@@ -17,7 +17,8 @@ const formatUptime = (uptimeMs: number) => {
 export const ClashInfoCard = () => {
   const { t } = useTranslation();
   const { version: clashVersion } = useClash();
-  const { clashConfig, rules, uptime, systemProxyAddress } = useAppData();
+  const { clashConfig, rules, systemProxyAddress } = useAppStatic();
+  const { uptime } = useAppRealtime();
 
   // 使用useMemo缓存格式化后的uptime，避免频繁计算
   const formattedUptime = useMemo(() => formatUptime(uptime), [uptime]);
@@ -27,52 +28,42 @@ export const ClashInfoCard = () => {
     if (!clashConfig) return null;
 
     return (
-      <Stack spacing={1.5}>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("Core Version")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
-            {clashVersion || "-"}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
+          </span>
+          <span className="text-sm font-medium">{clashVersion || "-"}</span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("System Proxy Address")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
-            {systemProxyAddress}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
+          </span>
+          <span className="text-sm font-medium">{systemProxyAddress}</span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("Mixed Port")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
+          </span>
+          <span className="text-sm font-medium">
             {clashConfig["mixed-port"] || "-"}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
-            {t("Uptime")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
-            {formattedUptime}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
+          </span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">{t("Uptime")}</span>
+          <span className="text-sm font-medium">{formattedUptime}</span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("Rules Count")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
-            {rules.length}
-          </Typography>
-        </Stack>
-      </Stack>
+          </span>
+          <span className="text-sm font-medium">{rules.length}</span>
+        </div>
+      </div>
     );
   }, [
     clashConfig,
@@ -86,7 +77,7 @@ export const ClashInfoCard = () => {
   return (
     <EnhancedCard
       title={t("Clash Info")}
-      icon={<DeveloperBoardOutlined />}
+      icon={<Cpu className="w-5 h-5" />}
       iconColor="warning"
       action={null}
     >

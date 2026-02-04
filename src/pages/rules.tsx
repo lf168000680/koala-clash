@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import { useProfiles } from "@/hooks/use-profiles";
 import { useVisibility } from "@/hooks/use-visibility";
 import { cn } from "@root/lib/utils";
@@ -26,7 +26,7 @@ import { Pencil } from "lucide-react";
 
 const RulesPage = () => {
   const { t } = useTranslation();
-  const { rules = [], refreshRules, refreshRuleProviders } = useAppData();
+  const { rules = [], refreshRules, refreshRuleProviders } = useAppStatic();
   const { current, mutateProfiles } = useProfiles();
   const [match, setMatch] = useState(() => (_: string) => true);
   const [editorOpen, setEditorOpen] = useState(false);

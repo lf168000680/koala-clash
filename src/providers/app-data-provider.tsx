@@ -20,24 +20,15 @@ import { createAuthSockette } from "@/utils/websocket";
 import { useVisibility } from "@/hooks/use-visibility";
 import { listen } from "@tauri-apps/api/event";
 
-// 定义AppDataContext类型 - 使用宽松类型
-interface AppDataContextType {
+// 定义静态数据上下文类型 (低频更新)
+interface AppStaticContextType {
   proxies: any;
   clashConfig: any;
   rules: any[];
   sysproxy: any;
   runningMode?: string;
-  uptime: number;
   proxyProviders: any;
   ruleProviders: any;
-  connections: {
-    data: any[];
-    count: number;
-    uploadTotal: number;
-    downloadTotal: number;
-  };
-  traffic: { up: number; down: number };
-  memory: { inuse: number };
   systemProxyAddress: string;
 
   refreshProxy: () => Promise<any>;
@@ -49,7 +40,25 @@ interface AppDataContextType {
   refreshAll: () => Promise<any>;
 }
 
+// 定义实时数据上下文类型 (高频更新)
+interface AppRealtimeContextType {
+  uptime: number;
+  connections: {
+    data: any[];
+    count: number;
+    uploadTotal: number;
+    downloadTotal: number;
+  };
+  traffic: { up: number; down: number };
+  memory: { inuse: number };
+}
+
+// 组合类型 (为了兼容性)
+type AppDataContextType = AppStaticContextType & AppRealtimeContextType;
+
 // 创建上下文
+const AppStaticContext = createContext<AppStaticContextType | null>(null);
+const AppRealtimeContext = createContext<AppRealtimeContextType | null>(null);
 const AppDataContext = createContext<AppDataContextType | null>(null);
 
 // 全局数据提供者组件
@@ -67,7 +76,7 @@ export const AppDataProvider = ({
     "getProxies",
     getProxies,
     {
-      refreshInterval: 5000,
+      refreshInterval: pageVisible ? 5000 : 0,
       revalidateOnFocus: true,
       suspense: false,
       errorRetryCount: 3,
@@ -198,7 +207,7 @@ export const AppDataProvider = ({
           "[AppDataProvider] Failed to set up event listeners:",
           error,
         );
-        return () => {};
+        return () => { };
       }
     };
 
@@ -214,7 +223,7 @@ export const AppDataProvider = ({
     "getClashConfig",
     getClashConfig,
     {
-      refreshInterval: 5000,
+      refreshInterval: pageVisible ? 5000 : 0,
       revalidateOnFocus: false,
       suspense: false,
       errorRetryCount: 3,
@@ -274,7 +283,7 @@ export const AppDataProvider = ({
 
   // 高频率更新数据 (2秒)
   const { data: uptimeData } = useSWR("appUptime", getAppUptime, {
-    refreshInterval: 2000,
+    refreshInterval: pageVisible ? 2000 : 0,
     revalidateOnFocus: false,
     suspense: false,
   });
@@ -289,10 +298,10 @@ export const AppDataProvider = ({
   } = useSWRSubscription(
     clashInfo && pageVisible ? "connections" : null,
     (_key, { next }) => {
-      if (!clashInfo || !pageVisible) return () => {};
+      if (!clashInfo || !pageVisible) return () => { };
 
       const { server = "", secret = "" } = clashInfo;
-      if (!server) return () => {};
+      if (!server) return () => { };
 
       console.log(
         `[Connections][${AppDataProvider.name}] Connecting: ${server}/connections`,
@@ -385,10 +394,10 @@ export const AppDataProvider = ({
   const { data: trafficData = { up: 0, down: 0 } } = useSWRSubscription(
     clashInfo && pageVisible ? "traffic" : null,
     (_key, { next }) => {
-      if (!clashInfo || !pageVisible) return () => {};
+      if (!clashInfo || !pageVisible) return () => { };
 
       const { server = "", secret = "" } = clashInfo;
-      if (!server) return () => {};
+      if (!server) return () => { };
 
       console.log(
         `[Traffic][${AppDataProvider.name}] Connecting: ${server}/traffic`,
@@ -457,10 +466,10 @@ export const AppDataProvider = ({
   const { data: memoryData = { inuse: 0 } } = useSWRSubscription(
     clashInfo && pageVisible ? "memory" : null,
     (_key, { next }) => {
-      if (!clashInfo || !pageVisible) return () => {};
+      if (!clashInfo || !pageVisible) return () => { };
 
       const { server = "", secret = "" } = clashInfo;
-      if (!server) return () => {};
+      if (!server) return () => { };
 
       console.log(
         `[Memory][${AppDataProvider.name}] Connecting: ${server}/memory`,
@@ -534,8 +543,8 @@ export const AppDataProvider = ({
     ]);
   };
 
-  // 聚合所有数据
-  const value = useMemo(() => {
+  // 1. 静态数据 - 只有这些数据变化时才会更新
+  const staticValue = useMemo(() => {
     // 计算系统代理地址
     const calculateSystemProxyAddress = () => {
       if (!verge || !clashConfig) return "-";
@@ -568,33 +577,15 @@ export const AppDataProvider = ({
     };
 
     return {
-      // 数据
       proxies: proxiesData,
       clashConfig,
       rules: rulesData || [],
       sysproxy,
       runningMode,
-      uptime: uptimeData || 0,
-
-      // 提供者数据
       proxyProviders: proxyProviders || {},
       ruleProviders: ruleProviders || {},
-
-      // 连接数据
-      connections: {
-        data: connectionsData.connections || [],
-        count: connectionsData.connections?.length || 0,
-        uploadTotal: connectionsData.uploadTotal || 0,
-        downloadTotal: connectionsData.downloadTotal || 0,
-      },
-
-      // 实时流量数据
-      traffic: trafficData,
-      memory: memoryData,
-
       systemProxyAddress: calculateSystemProxyAddress(),
 
-      // 刷新方法
       refreshProxy,
       refreshClashConfig,
       refreshRules,
@@ -609,10 +600,6 @@ export const AppDataProvider = ({
     rulesData,
     sysproxy,
     runningMode,
-    uptimeData,
-    connectionsData,
-    trafficData,
-    memoryData,
     proxyProviders,
     ruleProviders,
     verge,
@@ -624,12 +611,41 @@ export const AppDataProvider = ({
     refreshRuleProviders,
   ]);
 
+  // 2. 实时数据 - 变化频率高
+  const realtimeValue = useMemo(() => {
+    return {
+      uptime: uptimeData || 0,
+      connections: {
+        data: connectionsData.connections || [],
+        count: connectionsData.connections?.length || 0,
+        uploadTotal: connectionsData.uploadTotal || 0,
+        downloadTotal: connectionsData.downloadTotal || 0,
+      },
+      traffic: trafficData,
+      memory: memoryData,
+    };
+  }, [uptimeData, connectionsData, trafficData, memoryData]);
+
+  // 3. 组合数据 - 兼容旧代码
+  const fullValue = useMemo(() => {
+    return {
+      ...staticValue,
+      ...realtimeValue,
+    };
+  }, [staticValue, realtimeValue]);
+
   return (
-    <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>
+    <AppStaticContext.Provider value={staticValue}>
+      <AppRealtimeContext.Provider value={realtimeValue}>
+        <AppDataContext.Provider value={fullValue}>
+          {children}
+        </AppDataContext.Provider>
+      </AppRealtimeContext.Provider>
+    </AppStaticContext.Provider>
   );
 };
 
-// 自定义Hook访问全局数据
+// 自定义Hook访问全局数据 (兼容旧代码，包含所有数据，会频繁更新)
 export const useAppData = () => {
   const context = useContext(AppDataContext);
 
@@ -637,5 +653,23 @@ export const useAppData = () => {
     throw new Error("useAppData must be used within AppDataProvider");
   }
 
+  return context;
+};
+
+// 新增：仅访问静态数据 (性能优化，不会随流量/连接变化而更新)
+export const useAppStatic = () => {
+  const context = useContext(AppStaticContext);
+  if (!context) {
+    throw new Error("useAppStatic must be used within AppDataProvider");
+  }
+  return context;
+};
+
+// 新增：仅访问实时数据
+export const useAppRealtime = () => {
+  const context = useContext(AppRealtimeContext);
+  if (!context) {
+    throw new Error("useAppRealtime must be used within AppDataProvider");
+  }
   return context;
 };

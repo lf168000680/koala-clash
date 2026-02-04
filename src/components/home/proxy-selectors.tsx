@@ -20,9 +20,9 @@ import {
 import { AlertTriangle, ChevronsUpDown, Timer, WholeWord } from "lucide-react";
 
 import { useVerge } from "@/hooks/use-verge";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import delayManager from "@/services/delay";
-import { updateProxy, deleteConnection } from "@/services/api";
+import { updateProxy, deleteConnection, getConnections } from "@/services/api";
 
 const STORAGE_KEY_GROUP = "clash-verge-selected-proxy-group";
 const STORAGE_KEY_SORT_TYPE = "clash-verge-proxy-sort-type";
@@ -100,7 +100,7 @@ const ProxySelectItem = ({
 export const ProxySelectors: React.FC = () => {
   const { t } = useTranslation();
   const { verge } = useVerge();
-  const { proxies, connections, clashConfig, refreshProxy } = useAppData();
+  const { proxies, clashConfig, refreshProxy } = useAppStatic();
 
   const mode = clashConfig?.mode?.toLowerCase() || "rule";
   const isGlobalMode = mode === "global";
@@ -215,7 +215,8 @@ export const ProxySelectors: React.FC = () => {
     try {
       await updateProxy(selectedGroup, newProxy);
       if (verge?.auto_close_connection && previousProxy) {
-        connections?.data.forEach((conn: any) => {
+        const connectionsData = await getConnections();
+        connectionsData?.connections?.forEach((conn: any) => {
           if (conn.chains.includes(previousProxy)) {
             deleteConnection(conn.id);
           }
@@ -253,7 +254,7 @@ export const ProxySelectors: React.FC = () => {
     const sourceList = isGlobalMode
       ? proxies?.global?.all
       : proxies?.groups?.find((g: IProxyGroup) => g.name === selectedGroup)
-          ?.all;
+        ?.all;
 
     if (sourceList) {
       const rawOptions = sourceList

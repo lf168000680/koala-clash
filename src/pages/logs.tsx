@@ -60,12 +60,12 @@ const LogPage = () => {
   const filterLogs = useMemo(() => {
     return logData
       ? logData.filter((data) => {
-          const searchText =
-            `${data.time || ""} ${data.type} ${data.payload}`.toLowerCase();
-          return logLevel === "all"
-            ? match(searchText)
-            : data.type.toLowerCase() === logLevel && match(searchText);
-        })
+        const searchText =
+          `${data.time || ""} ${data.type} ${data.payload}`.toLowerCase();
+        return logLevel === "all"
+          ? match(searchText)
+          : data.type.toLowerCase() === logLevel && match(searchText);
+      })
       : [];
   }, [logData, logLevel, match]);
 
@@ -92,6 +92,31 @@ const LogPage = () => {
     },
     [],
   );
+
+  const highlightRegex = useMemo(() => {
+    if (!searchState?.text.trim()) return null;
+    try {
+      const searchText = searchState.text;
+      let pattern: string;
+
+      if (searchState.useRegularExpression) {
+        try {
+          new RegExp(searchText);
+          pattern = searchText;
+        } catch {
+          pattern = searchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+      } else {
+        const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        pattern = searchState.matchWholeWord ? `\\b${escaped}\\b` : escaped;
+      }
+
+      const flags = searchState.matchCase ? "g" : "gi";
+      return new RegExp(`(${pattern})`, flags);
+    } catch {
+      return null;
+    }
+  }, [searchState]);
 
   return (
     <div className="h-full w-full relative">
@@ -152,7 +177,11 @@ const LogPage = () => {
           <Virtuoso
             data={filterLogs}
             itemContent={(index, item) => (
-              <LogItem value={item} searchState={searchState} />
+              <LogItem
+                value={item}
+                searchState={searchState}
+                highlightRegex={highlightRegex}
+              />
             )}
             followOutput={"smooth"}
             className="w-full h-full"

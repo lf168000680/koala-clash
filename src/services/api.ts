@@ -418,15 +418,13 @@ const IP_CHECK_SERVICES: ServiceConfig[] = [
   },
 ];
 
-// 随机性服务列表洗牌函数
+// Fisher-Yates shuffle with Math.random
 function shuffleServices() {
-  // 过滤无效服务并确保每个元素符合ServiceConfig接口
   const validServices = IP_CHECK_SERVICES.filter(
     (service): service is ServiceConfig =>
-      service !== null &&
-      service !== undefined &&
+      !!service &&
       typeof service.url === "string" &&
-      typeof service.mapping === "function", // 添加对mapping属性的检查
+      typeof service.mapping === "function",
   );
 
   if (validServices.length === 0) {
@@ -434,116 +432,54 @@ function shuffleServices() {
     return [];
   }
 
-  // 使用单一Fisher-Yates洗牌算法，增强随机性
   const shuffled = [...validServices];
-  const length = shuffled.length;
-
-  // 使用多个种子进行多次洗牌
-  const seeds = [Math.random(), Date.now() / 1000, performance.now() / 1000];
-
-  for (const seed of seeds) {
-    const prng = createPrng(seed);
-
-    // Fisher-Yates洗牌算法
-    for (let i = length - 1; i > 0; i--) {
-      const j = Math.floor(prng() * (i + 1));
-
-      // 使用临时变量进行交换，避免解构赋值可能的问题
-      const temp = shuffled[i];
-      shuffled[i] = shuffled[j];
-      shuffled[j] = temp;
-    }
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
   return shuffled;
 }
 
-// 创建一个简单的随机数生成器
-function createPrng(seed: number): () => number {
-  // 使用xorshift32算法
-  let state = seed >>> 0;
-
-  // 如果种子为0，设置一个默认值
-  if (state === 0) state = 123456789;
-
-  return function () {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return (state >>> 0) / 4294967296;
-  };
-}
-
 // 获取当前IP和地理位置信息
 export const getIpInfo = async (): Promise<IpInfo> => {
-  // 配置参数
-  const maxRetries = 3;
   const serviceTimeout = 5000;
-  const overallTimeout = 20000; // increase total timeout to accommodate delays
+  const shuffledServices = shuffleServices();
 
-  const overallTimeoutController = new AbortController();
-  const overallTimeoutId = setTimeout(() => {
-    overallTimeoutController.abort();
-  }, overallTimeout);
+  if (shuffledServices.length === 0) {
+    throw new Error("No available IP detection services");
+  }
+
+  // Use Promise.any to get the fastest successful response
+  // This is more efficient than sequential attempts and handles failures gracefully
+  const promises = shuffledServices.map(async (service) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      service.timeout || serviceTimeout,
+    );
+
+    try {
+      // console.log(`Trying IP detection service: ${service.url}`);
+      const response = await axios.get(service.url, {
+        signal: controller.signal,
+        timeout: service.timeout || serviceTimeout,
+      });
+
+      if (response.data && response.data.ip) {
+        // console.log(`IP detection succeeded: ${service.url}`);
+        return service.mapping(response.data);
+      }
+      throw new Error(`Invalid response format from ${service.url}`);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  });
 
   try {
-    const shuffledServices = shuffleServices();
-    let lastError: Error | null = null;
-
-    for (const service of shuffledServices) {
-      console.log(`Trying IP detection service: ${service.url}`);
-
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-        try {
-          const timeoutController = new AbortController();
-          timeoutId = setTimeout(() => {
-            timeoutController.abort();
-          }, service.timeout || serviceTimeout);
-
-          const response = await axios.get(service.url, {
-            signal: timeoutController.signal,
-            timeout: service.timeout || serviceTimeout,
-            // 移除了headers参数（默认会使用axios的默认User-Agent）
-          });
-
-          if (timeoutId) clearTimeout(timeoutId);
-
-          if (response.data && response.data.ip) {
-            console.log(
-              `IP detection succeeded, using service: ${service.url}`,
-            );
-            return service.mapping(response.data);
-          } else {
-            throw new Error(`Invalid response format from ${service.url}`);
-          }
-        } catch (error: any) {
-          if (timeoutId) clearTimeout(timeoutId);
-
-          lastError = error;
-          console.log(
-            `Attempt ${attempt + 1}/${maxRetries} failed (${service.url}):`,
-            error.message,
-          );
-
-          if (error.name === "AbortError") {
-            throw error;
-          }
-
-          if (attempt < maxRetries - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-          }
-        }
-      }
-    }
-
-    if (lastError) {
-      throw new Error(`All IP detection services failed: ${lastError.message}`);
-    } else {
-      throw new Error("No available IP detection services");
-    }
-  } finally {
-    clearTimeout(overallTimeoutId);
+    return await Promise.any(promises);
+  } catch (error) {
+    console.error("All IP detection services failed", error);
+    throw new Error("All IP detection services failed");
   }
 };

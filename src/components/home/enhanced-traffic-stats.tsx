@@ -1,21 +1,13 @@
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Typography,
-  Paper,
-  alpha,
-  useTheme,
-  PaletteColor,
-  Grid,
-} from "@mui/material";
-import {
-  ArrowUpwardRounded,
-  ArrowDownwardRounded,
-  MemoryRounded,
-  LinkRounded,
-  CloudUploadRounded,
-  CloudDownloadRounded,
-} from "@mui/icons-material";
+  ArrowUp,
+  ArrowDown,
+  Cpu,
+  Link as LinkIcon,
+  CloudUpload,
+  CloudDownload,
+} from "lucide-react";
 import {
   EnhancedTrafficGraph,
   EnhancedTrafficGraphRef,
@@ -28,17 +20,12 @@ import { createAuthSockette } from "@/utils/websocket";
 import parseTraffic from "@/utils/parse-traffic";
 import { isDebugEnabled, gc } from "@/services/api";
 import { ReactNode } from "react";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppData, useAppRealtime } from "@/providers/app-data-provider";
+import { cn } from "@root/lib/utils";
 
 interface MemoryUsage {
   inuse: number;
   oslimit?: number;
-}
-
-interface TrafficStatData {
-  uploadTotal: number;
-  downloadTotal: number;
-  activeConnections: number;
 }
 
 interface StatCardProps {
@@ -68,85 +55,86 @@ const THROTTLE_TRAFFIC_UPDATE = 500; // 500ms节流流量数据更新
 // 统计卡片组件 - 使用memo优化
 const CompactStatCard = memo(
   ({ icon, title, value, unit, color, onClick }: StatCardProps) => {
-    const theme = useTheme();
+    // 颜色映射
+    const colorClasses = useMemo(() => {
+      const colors = {
+        primary: "text-green-600 bg-green-500/10 border-green-500/20 hover:bg-green-500/20 hover:border-green-500/40",
+        secondary: "text-violet-600 bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/20 hover:border-violet-500/40",
+        error: "text-red-600 bg-red-500/10 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40",
+        warning: "text-yellow-600 bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20 hover:border-yellow-500/40",
+        info: "text-blue-600 bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40",
+        success: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/40",
+      };
 
-    // 获取调色板颜色 - 使用useMemo避免重复计算
-    const colorValue = useMemo(() => {
-      const palette = theme.palette;
-      if (
-        color in palette &&
-        palette[color as keyof typeof palette] &&
-        "main" in (palette[color as keyof typeof palette] as PaletteColor)
-      ) {
-        return (palette[color as keyof typeof palette] as PaletteColor).main;
-      }
-      return palette.primary.main;
-    }, [theme.palette, color]);
+      // 暗黑模式下的颜色调整
+      const darkColors = {
+        primary: "dark:text-green-400 dark:bg-green-500/20 dark:border-green-500/30 dark:hover:bg-green-500/30",
+        secondary: "dark:text-violet-400 dark:bg-violet-500/20 dark:border-violet-500/30 dark:hover:bg-violet-500/30",
+        error: "dark:text-red-400 dark:bg-red-500/20 dark:border-red-500/30 dark:hover:bg-red-500/30",
+        warning: "dark:text-yellow-400 dark:bg-yellow-500/20 dark:border-yellow-500/30 dark:hover:bg-yellow-500/30",
+        info: "dark:text-blue-400 dark:bg-blue-500/20 dark:border-blue-500/30 dark:hover:bg-blue-500/30",
+        success: "dark:text-emerald-400 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:hover:bg-emerald-500/30",
+      };
+
+      return `${colors[color] || colors.primary} ${darkColors[color] || darkColors.primary}`;
+    }, [color]);
+
+    const iconBgClasses = useMemo(() => {
+      const colors = {
+        primary: "bg-green-500/20 text-green-600",
+        secondary: "bg-violet-500/20 text-violet-600",
+        error: "bg-red-500/20 text-red-600",
+        warning: "bg-yellow-500/20 text-yellow-600",
+        info: "bg-blue-500/20 text-blue-600",
+        success: "bg-emerald-500/20 text-emerald-600",
+      };
+
+      const darkColors = {
+        primary: "dark:bg-green-500/30 dark:text-green-400",
+        secondary: "dark:bg-violet-500/30 dark:text-violet-400",
+        error: "dark:bg-red-500/30 dark:text-red-400",
+        warning: "dark:bg-yellow-500/30 dark:text-yellow-400",
+        info: "dark:bg-blue-500/30 dark:text-blue-400",
+        success: "dark:bg-emerald-500/30 dark:text-emerald-400",
+      };
+
+      return `${colors[color] || colors.primary} ${darkColors[color] || darkColors.primary}`;
+    }, [color]);
 
     return (
-      <Paper
-        elevation={0}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          borderRadius: 2,
-          bgcolor: alpha(colorValue, 0.05),
-          border: `1px solid ${alpha(colorValue, 0.15)}`,
-          padding: "8px",
-          transition: "all 0.2s ease-in-out",
-          cursor: onClick ? "pointer" : "default",
-          "&:hover": onClick
-            ? {
-                bgcolor: alpha(colorValue, 0.1),
-                border: `1px solid ${alpha(colorValue, 0.3)}`,
-                boxShadow: `0 4px 8px rgba(0,0,0,0.05)`,
-              }
-            : {},
-        }}
+      <div
+        className={cn(
+          "flex items-center rounded-lg border p-2 transition-all duration-200",
+          colorClasses,
+          onClick ? "cursor-pointer hover:shadow-sm" : "cursor-default"
+        )}
         onClick={onClick}
       >
         {/* 图标容器 */}
-        <Grid
-          component="div"
-          sx={{
-            mr: 1,
-            ml: "2px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            bgcolor: alpha(colorValue, 0.1),
-            color: colorValue,
-          }}
+        <div
+          className={cn(
+            "mr-2 ml-[2px] flex h-8 w-8 items-center justify-center rounded-full",
+            iconBgClasses
+          )}
         >
           {icon}
-        </Grid>
+        </div>
 
         {/* 文本内容 */}
-        <Grid component="div" sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary" noWrap>
+        <div className="flex min-w-0 flex-grow flex-col">
+          <span className="truncate text-xs text-muted-foreground">
             {title}
-          </Typography>
-          <Grid
-            component="div"
-            sx={{ display: "flex", alignItems: "baseline" }}
-          >
-            <Typography
-              variant="body1"
-              fontWeight="bold"
-              noWrap
-              sx={{ mr: 0.5 }}
-            >
+          </span>
+          <div className="flex items-baseline">
+            <span className="mr-0.5 truncate text-base font-bold text-foreground">
               {value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
+            </span>
+            <span className="text-xs text-muted-foreground">
               {unit}
-            </Typography>
-          </Grid>
-        </Grid>
-      </Paper>
+            </span>
+          </div>
+        </div>
+      </div>
     );
   },
 );
@@ -156,7 +144,6 @@ CompactStatCard.displayName = "CompactStatCard";
 
 export const EnhancedTrafficStats = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
   const { clashInfo } = useClashInfo();
   const { verge } = useVerge();
   const trafficRef = useRef<EnhancedTrafficGraphRef>(null);
@@ -164,7 +151,7 @@ export const EnhancedTrafficStats = () => {
   const [isDebug, setIsDebug] = useState(false);
 
   // 使用AppDataProvider
-  const { connections, uptime } = useAppData();
+  const { connections, uptime } = useAppRealtime();
 
   // 使用单一状态对象减少状态更新次数
   const [stats, setStats] = useState({
@@ -210,7 +197,7 @@ export const EnhancedTrafficStats = () => {
               down: data.down,
               timestamp: now,
             });
-          } catch {}
+          } catch { }
           return;
         }
         lastUpdateRef.current.traffic = now;
@@ -221,14 +208,14 @@ export const EnhancedTrafficStats = () => {
             ...prev,
             traffic: { up: safeUp, down: safeDown },
           }));
-        } catch {}
+        } catch { }
         try {
           trafficRef.current?.appendData({
             up: safeUp,
             down: safeDown,
             timestamp: now,
           });
-        } catch {}
+        } catch { }
       }
     } catch (err) {
       console.error("[Traffic] 解析数据错误:", err, event.data);
@@ -361,7 +348,7 @@ export const EnhancedTrafficStats = () => {
           if (socket) socket.close();
         });
         socketRefs.current = { traffic: null, memory: null };
-      } catch {}
+      } catch { }
     };
   }, []);
 
@@ -409,15 +396,8 @@ export const EnhancedTrafficStats = () => {
     if (!trafficGraph || !pageVisible) return null;
 
     return (
-      <Paper
-        elevation={0}
-        sx={{
-          height: 130,
-          cursor: "pointer",
-          border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-          borderRadius: 2,
-          overflow: "hidden",
-        }}
+      <div
+        className="h-[130px] cursor-pointer rounded-lg border border-border/20 overflow-hidden bg-background"
         onClick={() => trafficRef.current?.toggleStyle()}
       >
         <div style={{ height: "100%", position: "relative" }}>
@@ -442,50 +422,50 @@ export const EnhancedTrafficStats = () => {
             </div>
           )}
         </div>
-      </Paper>
+      </div>
     );
-  }, [trafficGraph, pageVisible, theme.palette.divider, isDebug]);
+  }, [trafficGraph, pageVisible, isDebug]);
 
   // 使用useMemo计算统计卡片配置
   const statCards = useMemo(
     () => [
       {
-        icon: <ArrowUpwardRounded fontSize="small" />,
+        icon: <ArrowUp size={16} />,
         title: t("Upload Speed"),
         value: parsedData.up,
         unit: `${parsedData.upUnit}/s`,
         color: "secondary" as const,
       },
       {
-        icon: <ArrowDownwardRounded fontSize="small" />,
+        icon: <ArrowDown size={16} />,
         title: t("Download Speed"),
         value: parsedData.down,
         unit: `${parsedData.downUnit}/s`,
         color: "primary" as const,
       },
       {
-        icon: <LinkRounded fontSize="small" />,
+        icon: <LinkIcon size={16} />,
         title: t("Active Connections"),
         value: parsedData.connectionsCount,
         unit: "",
         color: "success" as const,
       },
       {
-        icon: <CloudUploadRounded fontSize="small" />,
+        icon: <CloudUpload size={16} />,
         title: t("Uploaded"),
         value: parsedData.uploadTotal,
         unit: parsedData.uploadTotalUnit,
         color: "secondary" as const,
       },
       {
-        icon: <CloudDownloadRounded fontSize="small" />,
+        icon: <CloudDownload size={16} />,
         title: t("Downloaded"),
         value: parsedData.downloadTotal,
         unit: parsedData.downloadTotalUnit,
         color: "primary" as const,
       },
       {
-        icon: <MemoryRounded fontSize="small" />,
+        icon: <Cpu size={16} />,
         title: t("Memory Usage"),
         value: parsedData.inuse,
         unit: parsedData.inuseUnit,
@@ -497,19 +477,19 @@ export const EnhancedTrafficStats = () => {
   );
 
   return (
-    <Grid container spacing={1} columns={{ xs: 8, sm: 8, md: 12 }}>
+    <div className="grid grid-cols-3 gap-2 w-full">
       {trafficGraph && (
-        <Grid size={12}>
+        <div className="col-span-3">
           {/* 流量图表区域 */}
           {trafficGraphComponent}
-        </Grid>
+        </div>
       )}
       {/* 统计卡片区域 */}
       {statCards.map((card, index) => (
-        <Grid key={index} size={4}>
+        <div key={index} className="col-span-1">
           <CompactStatCard {...card} />
-        </Grid>
+        </div>
       ))}
-    </Grid>
+    </div>
   );
 };

@@ -1,7 +1,13 @@
-import { Box, Typography, alpha, useTheme } from "@mui/material";
 import { ReactNode } from "react";
+import { cn } from "@root/lib/utils";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardAction,
+} from "@/components/ui/card";
 
-// 自定义卡片组件接口
 export interface EnhancedCardProps {
   title: ReactNode;
   icon: ReactNode;
@@ -16,9 +22,18 @@ export interface EnhancedCardProps {
     | "success";
   minHeight?: number | string;
   noContentPadding?: boolean;
+  className?: string;
 }
 
-// 自定义卡片组件
+const fallbackColorMap: Record<string, string> = {
+  primary: "text-blue-500 bg-blue-500/10",
+  secondary: "text-purple-500 bg-purple-500/10",
+  error: "text-red-500 bg-red-500/10",
+  warning: "text-orange-500 bg-orange-500/10",
+  info: "text-sky-500 bg-sky-500/10",
+  success: "text-green-500 bg-green-500/10",
+};
+
 export const EnhancedCard = ({
   title,
   icon,
@@ -27,95 +42,37 @@ export const EnhancedCard = ({
   iconColor = "primary",
   minHeight,
   noContentPadding = false,
+  className,
 }: EnhancedCardProps) => {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
-
-  // 统一的标题截断样式
-  const titleTruncateStyle = {
-    minWidth: 0,
-    maxWidth: "100%",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    display: "block",
-  };
+  const colorClass = fallbackColorMap[iconColor] || fallbackColorMap.primary;
 
   return (
-    <Box
-      sx={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: 2,
-        backgroundColor: isDark ? "#282a36" : "#ffffff",
-      }}
-    >
-      <Box
-        sx={{
-          px: 2,
-          py: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: 1,
-          borderColor: "divider",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            minWidth: 0,
-            flex: 1,
-            overflow: "hidden",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 1.5,
-              width: 38,
-              height: 38,
-              mr: 1.5,
-              flexShrink: 0,
-              backgroundColor: alpha(theme.palette[iconColor].main, 0.12),
-              color: theme.palette[iconColor].main,
-            }}
+    <Card className={cn("flex flex-col h-full", className)}>
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2 border-b">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div
+            className={cn(
+              "flex items-center justify-center w-9 h-9 rounded-md shrink-0",
+              colorClass,
+            )}
           >
             {icon}
-          </Box>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            {typeof title === "string" ? (
-              <Typography
-                variant="h6"
-                fontWeight="medium"
-                fontSize={18}
-                sx={titleTruncateStyle}
-                title={title}
-              >
-                {title}
-              </Typography>
-            ) : (
-              <Box sx={titleTruncateStyle}>{title}</Box>
-            )}
-          </Box>
-        </Box>
-        {action && <Box sx={{ ml: 2, flexShrink: 0 }}>{action}</Box>}
-      </Box>
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          p: noContentPadding ? 0 : 2,
-          ...(minHeight && { minHeight }),
-        }}
+          </div>
+          <CardTitle className="truncate text-lg font-medium" title={typeof title === 'string' ? title : undefined}>
+            {title}
+          </CardTitle>
+        </div>
+        {action && <CardAction>{action}</CardAction>}
+      </CardHeader>
+      <CardContent
+        className={cn(
+          "flex-1 flex flex-col",
+          noContentPadding ? "p-0" : "p-4",
+        )}
+        style={{ minHeight: minHeight }}
       >
         {children}
-      </Box>
-    </Box>
+      </CardContent>
+    </Card>
   );
 };

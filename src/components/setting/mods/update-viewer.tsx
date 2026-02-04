@@ -127,7 +127,7 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
               size="sm"
               onClick={() =>
                 openUrl(
-                  `https://github.com/coolcoala/clash-verge-rev-lite/releases/tag/v${updateInfo?.version}`,
+                  `https://github.com/lf168000680/koala-clash/releases/tag/v${updateInfo?.version}`,
                 )
               }
             >

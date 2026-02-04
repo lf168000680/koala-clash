@@ -23,9 +23,9 @@ import {
 } from "lucide-react";
 
 import { useVerge } from "@/hooks/use-verge";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import delayManager from "@/services/delay";
-import { updateProxy, deleteConnection } from "@/services/api";
+import { updateProxy, deleteConnection, getConnections } from "@/services/api";
 
 const presetList = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE"];
 
@@ -291,7 +291,7 @@ export const ProxySelectorModal: React.FC<ProxySelectorModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const { verge } = useVerge();
-  const { proxies, connections, clashConfig, refreshProxy } = useAppData();
+  const { proxies, clashConfig, refreshProxy } = useAppStatic();
 
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [sortType, setSortType] = useState<ProxySortType>("default");
@@ -365,7 +365,8 @@ export const ProxySelectorModal: React.FC<ProxySelectorModalProps> = ({
         await updateProxy(groupName, proxyName);
 
         if (verge?.auto_close_connection && previousProxy) {
-          connections?.data.forEach((conn: any) => {
+          const connectionsData = await getConnections();
+          connectionsData?.connections?.forEach((conn: any) => {
             if (conn.chains.includes(previousProxy)) {
               deleteConnection(conn.id);
             }
@@ -377,7 +378,7 @@ export const ProxySelectorModal: React.FC<ProxySelectorModalProps> = ({
         console.error("Failed to update proxy", error);
       }
     },
-    [proxies, verge, connections, refreshProxy],
+    [proxies, verge, refreshProxy],
   );
 
   const handleTestAll = useCallback(async () => {

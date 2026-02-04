@@ -1,6 +1,6 @@
 // ProxyRender.tsx
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { HeadState } from "./use-head-state";
 import { ProxyHead } from "./proxy-head";
@@ -31,7 +31,7 @@ interface RenderProps {
   ) => void;
 }
 
-export const ProxyRender = (props: RenderProps) => {
+export const ProxyRender = memo((props: RenderProps) => {
   const { t } = useTranslation();
   const { indent, item, onLocation, onCheckAll, onHeadState, onChangeProxy } =
     props;
@@ -165,4 +165,4 @@ export const ProxyRender = (props: RenderProps) => {
   }
 
   return null;
-};
+});

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useCallback } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { useSortable } from "@dnd-kit/sortable";
@@ -34,12 +34,12 @@ const getDelayColorClass = (delay: number): string => {
 interface Props {
   id: string;
   itemData: IVergeTestItem;
-  onEdit: () => void;
+  onEdit: (item: IVergeTestItem) => void;
   onDelete: (uid: string) => void;
 }
 
-export const TestItem = (props: Props) => {
-  const { itemData, onEdit, onDelete: onDeleteItem } = props;
+export const TestItem = memo((props: Props) => {
+  const { itemData, onEdit: onEditProp, onDelete: onDeleteItem } = props;
   const {
     attributes,
     listeners,
@@ -82,6 +82,10 @@ export const TestItem = (props: Props) => {
       showNotice("error", err.message || err.toString());
     }
   });
+
+  const onEdit = useCallback(() => {
+    onEditProp(itemData);
+  }, [onEditProp, itemData]);
 
   const menu = [
     { label: "Edit", handler: onEdit },
@@ -180,4 +184,4 @@ export const TestItem = (props: Props) => {
       </ContextMenu>
     </div>
   );
-};
+});

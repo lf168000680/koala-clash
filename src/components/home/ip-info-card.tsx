@@ -1,42 +1,24 @@
 import { useTranslation } from "react-i18next";
-import { Box, Typography, Button, Skeleton, IconButton } from "@mui/material";
-import {
-  LocationOnOutlined,
-  RefreshOutlined,
-  VisibilityOutlined,
-  VisibilityOffOutlined,
-} from "@mui/icons-material";
+import { MapPin, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { EnhancedCard } from "./enhanced-card";
 import { getIpInfo } from "@/services/api";
 import { useState, useEffect, useCallback, memo } from "react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // 定义刷新时间（秒）
 const IP_REFRESH_SECONDS = 300;
 
 // 提取InfoItem子组件并使用memo优化
 const InfoItem = memo(({ label, value }: { label: string; value: string }) => (
-  <Box sx={{ mb: 0.7, display: "flex", alignItems: "flex-start" }}>
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      sx={{ minwidth: 60, mr: 0.5, flexShrink: 0, textAlign: "right" }}
-    >
+  <div className="mb-1.5 flex items-start">
+    <span className="min-w-[60px] mr-1 shrink-0 text-right text-sm text-muted-foreground">
       {label}:
-    </Typography>
-    <Typography
-      variant="body2"
-      sx={{
-        ml: 0.5,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        wordBreak: "break-word",
-        whiteSpace: "normal",
-        flexGrow: 1,
-      }}
-    >
+    </span>
+    <span className="ml-1 flex-grow overflow-hidden text-ellipsis break-words whitespace-normal text-sm">
       {value || "Unknown"}
-    </Typography>
-  </Box>
+    </span>
+  </div>
 ));
 
 // 获取国旗表情
@@ -113,20 +95,26 @@ export const IpInfoCard = () => {
     return (
       <EnhancedCard
         title={t("IP Information")}
-        icon={<LocationOnOutlined />}
+        icon={<MapPin />}
         iconColor="info"
         action={
-          <IconButton size="small" onClick={fetchIpInfo} disabled={true}>
-            <RefreshOutlined />
-          </IconButton>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchIpInfo}
+            disabled={true}
+            className="h-8 w-8"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         }
       >
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <Skeleton variant="text" width="60%" height={30} />
-          <Skeleton variant="text" width="80%" height={24} />
-          <Skeleton variant="text" width="70%" height={24} />
-          <Skeleton variant="text" width="50%" height={24} />
-        </Box>
+        <div className="flex flex-col gap-2">
+          <Skeleton className="w-[60%] h-[30px]" />
+          <Skeleton className="w-[80%] h-[24px]" />
+          <Skeleton className="w-[70%] h-[24px]" />
+          <Skeleton className="w-[50%] h-[24px]" />
+        </div>
       </EnhancedCard>
     );
   }
@@ -136,31 +124,25 @@ export const IpInfoCard = () => {
     return (
       <EnhancedCard
         title={t("IP Information")}
-        icon={<LocationOnOutlined />}
+        icon={<MapPin />}
         iconColor="info"
         action={
-          <IconButton size="small" onClick={fetchIpInfo}>
-            <RefreshOutlined />
-          </IconButton>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchIpInfo}
+            className="h-8 w-8"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         }
       >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            color: "error.main",
-          }}
-        >
-          <Typography variant="body1" color="error">
-            {error}
-          </Typography>
-          <Button onClick={fetchIpInfo} sx={{ mt: 2 }}>
+        <div className="flex flex-col items-center justify-center h-full text-destructive">
+          <p className="text-destructive">{error}</p>
+          <Button onClick={fetchIpInfo} className="mt-4">
             {t("Retry")}
           </Button>
-        </Box>
+        </div>
       </EnhancedCard>
     );
   }
@@ -169,108 +151,69 @@ export const IpInfoCard = () => {
   return (
     <EnhancedCard
       title={t("IP Information")}
-      icon={<LocationOnOutlined />}
+      icon={<MapPin />}
       iconColor="info"
       action={
-        <IconButton size="small" onClick={fetchIpInfo}>
-          <RefreshOutlined />
-        </IconButton>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={fetchIpInfo}
+          className="h-8 w-8"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       }
     >
-      <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            flex: 1,
-            overflow: "hidden",
-          }}
-        >
+      <div className="h-full flex flex-col">
+        <div className="flex flex-row flex-1 overflow-hidden">
           {/* 左侧：国家和IP地址 */}
-          <Box sx={{ width: "40%", overflow: "hidden" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                mb: 1,
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                component="span"
-                sx={{
-                  fontSize: "1.5rem",
-                  mr: 1,
-                  display: "inline-block",
-                  width: 28,
-                  textAlign: "center",
-                  flexShrink: 0,
-                  fontFamily: '"twemoji mozilla", sans-serif',
-                }}
+          <div className="w-[40%] overflow-hidden">
+            <div className="flex items-center mb-2 overflow-hidden">
+              <span
+                className="mr-2 inline-block w-7 text-center text-2xl shrink-0"
+                style={{ fontFamily: '"twemoji mozilla", sans-serif' }}
               >
                 {getCountryFlag(ipInfo?.country_code)}
-              </Box>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: "medium",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: "100%",
-                }}
+              </span>
+              <h6
+                className="font-medium overflow-hidden text-ellipsis whitespace-nowrap max-w-full text-base"
+                title={ipInfo?.country || t("Unknown")}
               >
                 {ipInfo?.country || t("Unknown")}
-              </Typography>
-            </Box>
+              </h6>
+            </div>
 
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ flexShrink: 0 }}
-              >
+            <div className="flex items-center mb-2">
+              <span className="text-sm text-muted-foreground shrink-0">
                 {t("IP")}:
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  ml: 1,
-                  overflow: "hidden",
-                  maxWidth: "calc(100% - 30px)",
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily: "monospace",
-                    fontSize: "0.75rem",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    wordBreak: "break-all",
-                  }}
-                >
+              </span>
+              <div className="flex items-center ml-2 overflow-hidden max-w-[calc(100%-30px)]">
+                <span className="font-mono text-xs overflow-hidden text-ellipsis break-all">
                   {showIp ? ipInfo?.ip : "••••••••••"}
-                </Typography>
-                <IconButton size="small" onClick={toggleShowIp}>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleShowIp}
+                  className="h-6 w-6 ml-1"
+                >
                   {showIp ? (
-                    <VisibilityOffOutlined fontSize="small" />
+                    <EyeOff className="h-4 w-4" />
                   ) : (
-                    <VisibilityOutlined fontSize="small" />
+                    <Eye className="h-4 w-4" />
                   )}
-                </IconButton>
-              </Box>
-            </Box>
+                </Button>
+              </div>
+            </div>
 
             <InfoItem
               label={t("ASN")}
               value={ipInfo?.asn ? `AS${ipInfo.asn}` : "N/A"}
             />
-          </Box>
+          </div>
 
           {/* 右侧：组织、ISP和位置信息 */}
-          <Box sx={{ width: "60%", overflow: "auto" }}>
+          <div className="w-[60%] overflow-auto">
             <InfoItem label={t("ISP")} value={ipInfo?.isp} />
             <InfoItem label={t("ORG")} value={ipInfo?.asn_organization} />
             <InfoItem
@@ -278,38 +221,19 @@ export const IpInfoCard = () => {
               value={[ipInfo?.city, ipInfo?.region].filter(Boolean).join(", ")}
             />
             <InfoItem label={t("Timezone")} value={ipInfo?.timezone} />
-          </Box>
-        </Box>
+          </div>
+        </div>
 
-        <Box
-          sx={{
-            mt: "auto",
-            pt: 0.5,
-            borderTop: 1,
-            borderColor: "divider",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            opacity: 0.7,
-            fontSize: "0.7rem",
-          }}
-        >
-          <Typography variant="caption">
+        <div className="mt-auto pt-1 border-t flex justify-between items-center opacity-70 text-[0.7rem]">
+          <span className="text-xs">
             {t("Auto refresh")}: {countdown}s
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              textOverflow: "ellipsis",
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-            }}
-          >
+          </span>
+          <span className="text-xs text-ellipsis overflow-hidden whitespace-nowrap">
             {ipInfo?.country_code}, {ipInfo?.longitude?.toFixed(2)},{" "}
             {ipInfo?.latitude?.toFixed(2)}
-          </Typography>
-        </Box>
-      </Box>
+          </span>
+        </div>
+      </div>
     </EnhancedCard>
   );
 };

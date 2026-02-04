@@ -1,13 +1,13 @@
 import useSWR, { mutate } from "swr";
 import { useVerge } from "@/hooks/use-verge";
 import { getAutotemProxy } from "@/services/cmds";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import { closeAllConnections } from "@/services/api";
 
 // 系统代理状态检测统一逻辑
 export const useSystemProxyState = () => {
   const { verge, mutateVerge, patchVerge } = useVerge();
-  const { sysproxy } = useAppData();
+  const { sysproxy } = useAppStatic();
   const { data: autoproxy } = useSWR("getAutotemProxy", getAutotemProxy, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,

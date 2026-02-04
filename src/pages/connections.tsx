@@ -10,7 +10,7 @@ import { Virtuoso } from "react-virtuoso";
 import { useTranslation } from "react-i18next";
 import { useConnectionSetting } from "@/services/states";
 import { useVisibility } from "@/hooks/use-visibility";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppRealtime } from "@/providers/app-data-provider";
 import { closeAllConnections } from "@/services/api";
 import parseTraffic from "@/utils/parse-traffic";
 import { cn } from "@root/lib/utils";
@@ -78,27 +78,27 @@ const initConn: IConnections = {
   data: [],
 };
 
+const orderOpts: Record<string, OrderFunc> = {
+  Default: (list) =>
+    list.sort((a, b) => {
+      const startA = a.start || "";
+      const startB = b.start || "";
+      return startB.localeCompare(startA);
+    }),
+  "Upload Speed": (list) =>
+    list.sort((a, b) => (b.curUpload ?? 0) - (a.curUpload ?? 0)),
+  "Download Speed": (list) =>
+    list.sort((a, b) => (b.curDownload ?? 0) - (a.curDownload ?? 0)),
+};
+
 const ConnectionsPage = () => {
   const { t } = useTranslation();
   const pageVisible = useVisibility();
   const [match, setMatch] = useState(() => (_: string) => true);
   const [curOrderOpt, setOrderOpt] = useState("Default");
-  const { connections } = useAppData();
+  const { connections } = useAppRealtime();
   const [setting, setSetting] = useConnectionSetting();
   const isTableLayout = setting.layout === "table";
-
-  const orderOpts: Record<string, OrderFunc> = {
-    Default: (list) =>
-      list.sort(
-        (a, b) =>
-          new Date(b.start || "0").getTime()! -
-          new Date(a.start || "0").getTime()!,
-      ),
-    "Upload Speed": (list) =>
-      list.sort((a, b) => (b.curUpload ?? 0) - (a.curUpload ?? 0)),
-    "Download Speed": (list) =>
-      list.sort((a, b) => (b.curDownload ?? 0) - (a.curDownload ?? 0)),
-  };
 
   const [isPaused, setIsPaused] = useState(false);
   const [frozenData, setFrozenData] = useState<IConnections | null>(null);

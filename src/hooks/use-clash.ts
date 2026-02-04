@@ -69,55 +69,22 @@ export const useClashInfo = () => {
 
     if (!hasInfo) return;
 
-    if (patch["redir-port"]) {
-      const port = patch["redir-port"];
-      if (port < 1111) {
-        throw new Error("The port should not < 1111");
-      }
-      if (port > 65535) {
-        throw new Error("The port should not > 65535");
-      }
-    }
+    // Validate ports
+    const portFields = [
+      "redir-port",
+      "tproxy-port",
+      "mixed-port",
+      "socks-port",
+      "port",
+    ] as const;
 
-    if (patch["tproxy-port"]) {
-      const port = patch["tproxy-port"];
-      if (port < 1111) {
-        throw new Error("The port should not < 1111");
+    portFields.forEach((field) => {
+      const value = patch[field];
+      if (typeof value === "number") {
+        if (value < 1111) throw new Error("The port should not < 1111");
+        if (value > 65535) throw new Error("The port should not > 65535");
       }
-      if (port > 65535) {
-        throw new Error("The port should not > 65535");
-      }
-    }
-
-    if (patch["mixed-port"]) {
-      const port = patch["mixed-port"];
-      if (port < 1111) {
-        throw new Error("The port should not < 1111");
-      }
-      if (port > 65535) {
-        throw new Error("The port should not > 65535");
-      }
-    }
-
-    if (patch["socks-port"]) {
-      const port = patch["socks-port"];
-      if (port < 1111) {
-        throw new Error("The port should not < 1111");
-      }
-      if (port > 65535) {
-        throw new Error("The port should not > 65535");
-      }
-    }
-
-    if (patch["port"]) {
-      const port = patch["port"];
-      if (port < 1111) {
-        throw new Error("The port should not < 1111");
-      }
-      if (port > 65535) {
-        throw new Error("The port should not > 65535");
-      }
-    }
+    });
 
     await patchClashConfig(patch);
     mutateInfo();

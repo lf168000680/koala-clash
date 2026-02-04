@@ -1,6 +1,5 @@
 import { useEffect, useRef, useMemo, useCallback } from "react";
 import { useVerge } from "@/hooks/use-verge";
-import { Box, IconButton, Tooltip, alpha, styled, Grid } from "@mui/material";
 import {
   DndContext,
   closestCenter,
@@ -10,34 +9,22 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
-
 import { useTranslation } from "react-i18next";
 import { TestViewer, TestViewerRef } from "@/components/test/test-viewer";
 import { TestItem } from "@/components/test/test-item";
 import { emit } from "@tauri-apps/api/event";
 import { nanoid } from "nanoid";
-import { Add, NetworkCheck } from "@mui/icons-material";
 import { EnhancedCard } from "./enhanced-card";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Network, Plus } from "lucide-react";
+import { cn } from "@root/lib/utils";
 
 // test icons
 import apple from "@/assets/image/test/apple.svg?raw";
 import github from "@/assets/image/test/github.svg?raw";
 import google from "@/assets/image/test/google.svg?raw";
 import youtube from "@/assets/image/test/youtube.svg?raw";
-
-// 自定义滚动条样式
-const ScrollBox = styled(Box)(({ theme }) => ({
-  maxHeight: "180px",
-  overflowY: "auto",
-  overflowX: "hidden",
-  "&::-webkit-scrollbar": {
-    width: "6px",
-  },
-  "&::-webkit-scrollbar-thumb": {
-    backgroundColor: alpha(theme.palette.text.primary, 0.2),
-    borderRadius: "3px",
-  },
-}));
 
 // 默认测试列表，移到组件外部避免重复创建
 const DEFAULT_TEST_LIST = [
@@ -122,7 +109,7 @@ export const TestCard = () => {
         const patchFn = () => {
           try {
             patchVerge({ test_list: newList });
-          } catch {}
+          } catch { }
         };
         if (window.requestIdleCallback) {
           window.requestIdleCallback(patchFn);
@@ -141,25 +128,29 @@ export const TestCard = () => {
     }
   }, [verge, patchVerge]);
 
+  const handleEdit = useCallback((item: IVergeTestItem) => {
+    viewerRef.current?.edit(item);
+  }, []);
+
   // 使用useMemo优化UI内容，减少渲染计算
   const renderTestItems = useMemo(
     () => (
-      <Grid container spacing={1} columns={12}>
+      <div className="grid grid-cols-4 gap-2">
         <SortableContext items={testList.map((x) => x.uid)}>
           {testList.map((item) => (
-            <Grid key={item.uid} size={3}>
+            <div key={item.uid} className="col-span-1">
               <TestItem
                 id={item.uid}
                 itemData={item}
-                onEdit={() => viewerRef.current?.edit(item)}
+                onEdit={handleEdit}
                 onDelete={onDeleteTestListItem}
               />
-            </Grid>
+            </div>
           ))}
         </SortableContext>
-      </Grid>
+      </div>
     ),
-    [testList, onDeleteTestListItem],
+    [testList, onDeleteTestListItem, handleEdit],
   );
 
   const handleTestAll = useCallback(() => {
@@ -173,23 +164,41 @@ export const TestCard = () => {
   return (
     <EnhancedCard
       title={t("Website Tests")}
-      icon={<NetworkCheck />}
+      icon={<Network className="w-5 h-5" />}
       action={
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Tooltip title={t("Test All")} arrow>
-            <IconButton size="small" onClick={handleTestAll}>
-              <NetworkCheck fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t("Create Test")} arrow>
-            <IconButton size="small" onClick={handleCreateTest}>
-              <Add fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <div className="flex gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleTestAll}>
+                  <Network className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("Test All")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCreateTest}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("Create Test")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div >
       }
     >
-      <ScrollBox>
+      <div className={cn(
+        "max-h-[180px] overflow-y-auto overflow-x-hidden",
+        "scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent"
+      )}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -197,9 +206,9 @@ export const TestCard = () => {
         >
           {renderTestItems}
         </DndContext>
-      </ScrollBox>
+      </div>
 
       <TestViewer ref={viewerRef} onChange={onTestListItemChange} />
-    </EnhancedCard>
+    </EnhancedCard >
   );
 };

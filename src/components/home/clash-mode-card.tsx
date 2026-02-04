@@ -1,21 +1,18 @@
 import { useTranslation } from "react-i18next";
-import { Box, Typography, Paper, Stack } from "@mui/material";
 import { useLockFn } from "ahooks";
 import { closeAllConnections } from "@/services/api";
 import { patchClashMode } from "@/services/cmds";
 import { useVerge } from "@/hooks/use-verge";
-import {
-  LanguageRounded,
-  MultipleStopRounded,
-  DirectionsRounded,
-} from "@mui/icons-material";
+import { Globe, Workflow, MoveUpRight } from "lucide-react";
 import { useMemo } from "react";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
+import { cn } from "@root/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export const ClashModeCard = () => {
   const { t } = useTranslation();
   const { verge } = useVerge();
-  const { clashConfig, refreshClashConfig } = useAppData();
+  const { clashConfig, refreshClashConfig } = useAppStatic();
 
   // 支持的模式列表
   const modeList = useMemo(() => ["rule", "global", "direct"] as const, []);
@@ -30,14 +27,14 @@ export const ClashModeCard = () => {
       );
     }
     return t("Mode Description Not Available");
-  }, [currentMode]);
+  }, [currentMode, t]);
 
   // 模式图标映射
   const modeIcons = useMemo(
     () => ({
-      rule: <MultipleStopRounded fontSize="small" />,
-      global: <LanguageRounded fontSize="small" />,
-      direct: <DirectionsRounded fontSize="small" />,
+      rule: <Workflow size={18} />,
+      global: <Globe size={18} />,
+      direct: <MoveUpRight size={18} />,
     }),
     [],
   );
@@ -58,108 +55,33 @@ export const ClashModeCard = () => {
     }
   });
 
-  // 按钮样式
-  const buttonStyles = (mode: string) => ({
-    cursor: "pointer",
-    px: 2,
-    py: 1.2,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 1,
-    bgcolor: mode === currentMode ? "primary.main" : "background.paper",
-    color: mode === currentMode ? "primary.contrastText" : "text.primary",
-    borderRadius: 1.5,
-    transition: "all 0.2s ease-in-out",
-    position: "relative",
-    overflow: "visible",
-    "&:hover": {
-      transform: "translateY(-1px)",
-      boxShadow: 1,
-    },
-    "&:active": {
-      transform: "translateY(1px)",
-    },
-    "&::after":
-      mode === currentMode
-        ? {
-            content: '""',
-            position: "absolute",
-            bottom: -16,
-            left: "50%",
-            width: 2,
-            height: 16,
-            bgcolor: "primary.main",
-            transform: "translateX(-50%)",
-          }
-        : {},
-  });
-
-  // 描述样式
-  const descriptionStyles = {
-    width: "95%",
-    textAlign: "center",
-    color: "text.secondary",
-    p: 0.8,
-    borderRadius: 1,
-    borderColor: "primary.main",
-    borderWidth: 1,
-    borderStyle: "solid",
-    backgroundColor: "background.paper",
-    wordBreak: "break-word",
-    hyphens: "auto",
-  };
-
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+    <div className="flex flex-col w-full">
       {/* 模式选择按钮组 */}
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 1,
-          position: "relative",
-          zIndex: 2,
-        }}
-      >
+      <div className="flex justify-center py-1 relative z-10 gap-2">
         {modeList.map((mode) => (
-          <Paper
+          <Button
             key={mode}
-            elevation={mode === currentMode ? 2 : 0}
+            variant={mode === currentMode ? "default" : "outline"}
             onClick={() => onChangeMode(mode)}
-            sx={buttonStyles(mode)}
+            className={cn(
+              "flex items-center justify-center gap-2 px-4 py-2 capitalize transition-all",
+              mode === currentMode &&
+              "relative after:content-[''] after:absolute after:-bottom-4 after:left-1/2 after:w-0.5 after:h-4 after:bg-primary after:-translate-x-1/2",
+            )}
           >
             {modeIcons[mode]}
-            <Typography
-              variant="body2"
-              sx={{
-                textTransform: "capitalize",
-                fontWeight: mode === currentMode ? 600 : 400,
-              }}
-            >
-              {t(mode)}
-            </Typography>
-          </Paper>
+            {t(mode)}
+          </Button>
         ))}
-      </Stack>
+      </div>
 
       {/* 说明文本区域 */}
-      <Box
-        sx={{
-          width: "100%",
-          my: 1,
-          position: "relative",
-          display: "flex",
-          justifyContent: "center",
-          overflow: "visible",
-        }}
-      >
-        <Typography variant="caption" component="div" sx={descriptionStyles}>
+      <div className="w-full my-2 relative flex justify-center overflow-visible">
+        <div className="w-[95%] text-center text-muted-foreground p-2 rounded-md border border-primary bg-background break-words hyphens-auto text-xs">
           {modeDescription}
-        </Typography>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 };

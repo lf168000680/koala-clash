@@ -4,26 +4,27 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { deleteConnection } from "@/services/api";
 import parseTraffic from "@/utils/parse-traffic";
+import { memo } from "react";
 
 interface TagProps {
   children: React.ReactNode;
   className?: string;
 }
 
-const Tag: React.FC<TagProps> = ({ children, className }) => {
+const Tag: React.FC<TagProps> = memo(({ children, className }) => {
   const baseClasses =
     "text-[10px] px-1 leading-[1.375] border rounded-[4px] border-muted-foreground/35";
   return (
     <span className={`${baseClasses} ${className || ""}`}>{children}</span>
   );
-};
+});
 
 interface Props {
   value: IConnectionsItem;
   onShowDetail?: () => void;
 }
 
-export const ConnectionItem = (props: Props) => {
+export const ConnectionItem = memo((props: Props) => {
   const { value, onShowDetail } = props;
 
   const { id, metadata, chains, start, curUpload, curDownload } = value;
@@ -70,4 +71,4 @@ export const ConnectionItem = (props: Props) => {
       </Button>
     </div>
   );
-};
+});

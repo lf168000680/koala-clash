@@ -322,9 +322,9 @@ export const ConnectionTable = (props: Props) => {
         minSize: 60,
         enableSorting: true,
         sortingFn: (rowA, rowB) => {
-          const timeA = new Date(rowA.original.time).getTime();
-          const timeB = new Date(rowB.original.time).getTime();
-          return timeA - timeB;
+          const timeA = rowA.original.time || "";
+          const timeB = rowB.original.time || "";
+          return timeA.localeCompare(timeB);
         },
         cell: ({ getValue }) => (
           <div className="text-right font-mono text-sm">

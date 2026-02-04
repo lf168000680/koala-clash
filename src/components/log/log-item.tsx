@@ -1,32 +1,18 @@
 import { SearchState } from "@/components/base/base-search-box";
+import { memo } from "react";
 
 interface Props {
   value: ILogItem;
   searchState?: SearchState;
+  highlightRegex?: RegExp | null;
 }
 
-const LogItem = ({ value, searchState }: Props) => {
+const LogItem = ({ value, searchState, highlightRegex }: Props) => {
   const renderHighlightText = (text: string) => {
-    if (!searchState?.text.trim()) return text;
+    if (!highlightRegex) return text;
 
     try {
-      const searchText = searchState.text;
-      let pattern: string;
-
-      if (searchState.useRegularExpression) {
-        try {
-          new RegExp(searchText);
-          pattern = searchText;
-        } catch {
-          pattern = searchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        }
-      } else {
-        const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        pattern = searchState.matchWholeWord ? `\\b${escaped}\\b` : escaped;
-      }
-
-      const flags = searchState.matchCase ? "g" : "gi";
-      const parts = text.split(new RegExp(`(${pattern})`, flags));
+      const parts = text.split(highlightRegex);
 
       return parts.map((part, index) => {
         return index % 2 === 1 ? (
@@ -76,4 +62,4 @@ const LogItem = ({ value, searchState }: Props) => {
   );
 };
 
-export default LogItem;
+export default memo(LogItem);

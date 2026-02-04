@@ -62,6 +62,9 @@ export const ProxyGroups = memo((props: Props) => {
   const { mode } = props;
 
   const { renderList, onProxies, onHeadState } = useRenderList(mode);
+  const renderListRef = useRef(renderList);
+  renderListRef.current = renderList;
+
   const { verge } = useVerge();
   const { current, patchCurrent } = useProfiles();
   const timeout = verge?.default_latency_timeout || 10000;
@@ -162,11 +165,11 @@ export const ProxyGroups = memo((props: Props) => {
     }
   });
 
-  const handleLocation = (group: IProxyGroupItem) => {
+  const handleLocation = useCallback((group: IProxyGroupItem) => {
     if (!group) return;
     const { name, now } = group;
 
-    const index = renderList.findIndex(
+    const index = renderListRef.current.findIndex(
       (e) =>
         e.group?.name === name &&
         ((e.type === 2 && e.proxy?.name === now) ||
@@ -180,12 +183,23 @@ export const ProxyGroups = memo((props: Props) => {
         behavior: "smooth",
       });
     }
-  };
+  }, []);
 
   // Отображение заглушки для режима Direct
   if (mode === "direct") {
     return <BaseEmpty text={t("clash_mode_direct")} />;
   }
+
+  const itemContent = useCallback((index: number) => (
+    <ProxyRender
+      item={renderList[index]}
+      indent={mode === "rule" || mode === "script"}
+      onLocation={handleLocation}
+      onCheckAll={handleCheckAll}
+      onHeadState={onHeadState}
+      onChangeProxy={handleChangeProxy}
+    />
+  ), [renderList, mode, handleLocation, handleCheckAll, onHeadState, handleChangeProxy]);
 
   return (
     <div className="relative h-full">
@@ -196,16 +210,7 @@ export const ProxyGroups = memo((props: Props) => {
         scrollerRef={(ref) => (scrollerRef.current = ref as Element)}
         components={{ Footer: () => <div style={{ height: "8px" }} /> }}
         computeItemKey={(index) => renderList[index].key}
-        itemContent={(index) => (
-          <ProxyRender
-            item={renderList[index]}
-            indent={mode === "rule" || mode === "script"}
-            onLocation={handleLocation}
-            onCheckAll={handleCheckAll}
-            onHeadState={onHeadState}
-            onChangeProxy={handleChangeProxy}
-          />
-        )}
+        itemContent={itemContent}
       />
       <ScrollTopButton show={showScrollTop} onClick={scrollToTop} />
     </div>

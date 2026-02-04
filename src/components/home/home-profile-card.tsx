@@ -1,25 +1,14 @@
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  Typography,
-  Button,
-  Stack,
-  LinearProgress,
-  alpha,
-  useTheme,
-  Link,
-  keyframes,
-} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import {
-  CloudUploadOutlined,
-  StorageOutlined,
-  UpdateOutlined,
-  DnsOutlined,
-  SpeedOutlined,
-  EventOutlined,
-  LaunchOutlined,
-} from "@mui/icons-material";
+  CloudUpload,
+  Database,
+  RefreshCw,
+  Globe,
+  Gauge,
+  Calendar,
+  ExternalLink,
+} from "lucide-react";
 import dayjs from "dayjs";
 import parseTraffic from "@/utils/parse-traffic";
 import { useMemo, useCallback, useState } from "react";
@@ -27,13 +16,10 @@ import { openWebUrl, updateProfile } from "@/services/cmds";
 import { useLockFn } from "ahooks";
 import { showNotice } from "@/services/noticeService";
 import { EnhancedCard } from "./enhanced-card";
-import { useAppData } from "@/providers/app-data-provider";
-
-// 定义旋转动画
-const round = keyframes`
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-`;
+import { useAppStatic } from "@/providers/app-data-provider";
+import { cn } from "@root/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 // 辅助函数解析URL和过期时间
 const parseUrl = (url?: string) => {
@@ -73,14 +59,6 @@ export interface HomeProfileCardProps {
   onProfileUpdated?: () => void;
 }
 
-// 添加一个通用的截断样式
-const truncateStyle = {
-  maxWidth: "calc(100% - 28px)",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
 // 提取独立组件减少主组件复杂度
 const ProfileDetails = ({
   current,
@@ -92,7 +70,6 @@ const ProfileDetails = ({
   updating: boolean;
 }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   const usedTraffic = useMemo(() => {
     if (!current.extra) return 0;
@@ -106,147 +83,94 @@ const ProfileDetails = ({
   }, [current.extra, usedTraffic]);
 
   return (
-    <Box>
-      <Stack spacing={2}>
+    <div>
+      <div className="space-y-4">
         {current.url && (
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <DnsOutlined fontSize="small" color="action" />
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              noWrap
-              sx={{ display: "flex", alignItems: "center" }}
-            >
-              <span style={{ flexShrink: 0 }}>{t("From")}: </span>
+          <div className="flex items-center space-x-2">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+            <div className="text-sm text-muted-foreground flex items-center overflow-hidden">
+              <span className="flex-shrink-0">{t("From")}: </span>
               {current.home ? (
-                <Link
-                  component="button"
-                  fontWeight="medium"
+                <button
                   onClick={() => current.home && openWebUrl(current.home)}
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    minWidth: 0,
-                    maxWidth: "calc(100% - 40px)",
-                    ml: 0.5,
-                  }}
+                  className="inline-flex items-center min-w-0 max-w-[calc(100%-40px)] ml-1 hover:underline text-foreground font-medium"
                   title={parseUrl(current.url)}
                 >
-                  <Typography
-                    component="span"
-                    sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      minWidth: 0,
-                      flex: 1,
-                    }}
-                  >
+                  <span className="truncate flex-1">
                     {parseUrl(current.url)}
-                  </Typography>
-                  <LaunchOutlined
-                    fontSize="inherit"
-                    sx={{
-                      ml: 0.5,
-                      fontSize: "0.8rem",
-                      opacity: 0.7,
-                      flexShrink: 0,
-                    }}
+                  </span>
+                  <ExternalLink
+                    className="ml-1 w-3 h-3 opacity-70 flex-shrink-0"
                   />
-                </Link>
+                </button>
               ) : (
-                <Typography
-                  component="span"
-                  fontWeight="medium"
-                  sx={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    minWidth: 0,
-                    flex: 1,
-                    ml: 0.5,
-                  }}
+                <span
+                  className="truncate flex-1 ml-1 font-medium text-foreground"
                   title={parseUrl(current.url)}
                 >
                   {parseUrl(current.url)}
-                </Typography>
+                </span>
               )}
-            </Typography>
-          </Stack>
+            </div>
+          </div>
         )}
 
         {current.updated && (
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <UpdateOutlined
-              fontSize="small"
-              color="action"
-              sx={{
-                cursor: "pointer",
-                animation: updating ? `${round} 1.5s linear infinite` : "none",
-              }}
+          <div className="flex items-center space-x-2">
+            <RefreshCw
+              className={cn(
+                "w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors",
+                updating && "animate-spin"
+              )}
               onClick={onUpdateProfile}
             />
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ cursor: "pointer" }}
+            <div
+              className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
               onClick={onUpdateProfile}
             >
               {t("Update Time")}:{" "}
-              <Box component="span" fontWeight="medium">
+              <span className="font-medium text-foreground">
                 {dayjs(current.updated * 1000).format("YYYY-MM-DD HH:mm")}
-              </Box>
-            </Typography>
-          </Stack>
+              </span>
+            </div>
+          </div>
         )}
 
         {current.extra && (
           <>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <SpeedOutlined fontSize="small" color="action" />
-              <Typography variant="body2" color="text.secondary">
+            <div className="flex items-center space-x-2">
+              <Gauge className="w-4 h-4 text-muted-foreground" />
+              <div className="text-sm text-muted-foreground">
                 {t("Used / Total")}:{" "}
-                <Box component="span" fontWeight="medium">
+                <span className="font-medium text-foreground">
                   {parseTraffic(usedTraffic)} /{" "}
                   {parseTraffic(current.extra.total)}
-                </Box>
-              </Typography>
-            </Stack>
+                </span>
+              </div>
+            </div>
 
             {current.extra.expire > 0 && (
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <EventOutlined fontSize="small" color="action" />
-                <Typography variant="body2" color="text.secondary">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <div className="text-sm text-muted-foreground">
                   {t("Expire Time")}:{" "}
-                  <Box component="span" fontWeight="medium">
+                  <span className="font-medium text-foreground">
                     {parseExpire(current.extra.expire)}
-                  </Box>
-                </Typography>
-              </Stack>
+                  </span>
+                </div>
+              </div>
             )}
 
-            <Box sx={{ mt: 1 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mb: 0.5, display: "block" }}
-              >
+            <div className="mt-2">
+              <span className="text-xs text-muted-foreground mb-1 block">
                 {trafficPercentage}%
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={trafficPercentage}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                }}
-              />
-            </Box>
+              </span>
+              <Progress value={trafficPercentage} className="h-2" />
+            </div>
           </>
         )}
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 };
 
@@ -255,29 +179,18 @@ const EmptyProfile = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        py: 2.4,
-        cursor: "pointer",
-        "&:hover": { bgcolor: "action.hover" },
-        borderRadius: 2,
-      }}
+    <div
+      className="flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors"
       onClick={onClick}
     >
-      <CloudUploadOutlined
-        sx={{ fontSize: 60, color: "primary.main", mb: 2 }}
-      />
-      <Typography variant="h6" gutterBottom>
+      <CloudUpload className="w-16 h-16 text-primary mb-4" />
+      <h6 className="text-lg font-medium mb-1">
         {t("Import")} {t("Profiles")}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
+      </h6>
+      <p className="text-sm text-muted-foreground">
         {t("Click to import subscription")}
-      </Typography>
-    </Box>
+      </p>
+    </div>
   );
 };
 
@@ -287,7 +200,7 @@ export const HomeProfileCard = ({
 }: HomeProfileCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { refreshAll } = useAppData();
+  const { refreshAll } = useAppStatic();
 
   // 更新当前订阅
   const [updating, setUpdating] = useState(false);
@@ -322,39 +235,16 @@ export const HomeProfileCard = ({
     if (!current.home) return current.name;
 
     return (
-      <Link
-        component="button"
-        variant="h6"
-        fontWeight="medium"
-        fontSize={18}
+      <button
         onClick={() => current.home && openWebUrl(current.home)}
-        sx={{
-          color: "inherit",
-          textDecoration: "none",
-          display: "flex",
-          alignItems: "center",
-          minWidth: 0,
-          maxWidth: "100%",
-          "& > span": {
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            flex: 1,
-          },
-        }}
+        className="text-lg font-medium flex items-center min-w-0 max-w-full hover:underline text-inherit bg-transparent border-0 p-0 cursor-pointer"
         title={current.name}
       >
-        <span>{current.name}</span>
-        <LaunchOutlined
-          fontSize="inherit"
-          sx={{
-            ml: 0.5,
-            fontSize: "0.8rem",
-            opacity: 0.7,
-            flexShrink: 0,
-          }}
+        <span className="truncate flex-1">{current.name}</span>
+        <ExternalLink
+          className="ml-1 w-3.5 h-3.5 opacity-70 flex-shrink-0"
         />
-      </Link>
+      </button>
     );
   }, [current, t]);
 
@@ -364,13 +254,13 @@ export const HomeProfileCard = ({
 
     return (
       <Button
-        variant="outlined"
-        size="small"
+        variant="outline"
+        size="sm"
         onClick={goToProfiles}
-        endIcon={<StorageOutlined fontSize="small" />}
-        sx={{ borderRadius: 1.5 }}
+        className="rounded-md"
       >
         {t("Label-Profiles")}
+        <Database className="ml-2 w-4 h-4" />
       </Button>
     );
   }, [current, goToProfiles, t]);
@@ -378,7 +268,7 @@ export const HomeProfileCard = ({
   return (
     <EnhancedCard
       title={cardTitle}
-      icon={<CloudUploadOutlined />}
+      icon={<CloudUpload className="w-5 h-5" />}
       iconColor="info"
       action={cardAction}
     >

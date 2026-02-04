@@ -16,7 +16,7 @@ import { DialogRef, Switch } from "@/components/base";
 import { BaseFieldset } from "@/components/base/base-fieldset";
 import { EditorViewer } from "@/components/profile/editor-viewer";
 import { useVerge } from "@/hooks/use-verge";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import { getClashConfig } from "@/services/api";
 import {
   getAutotemProxy,
@@ -111,7 +111,7 @@ const Combobox = ({
                 onSelect={(currentValue) => {
                   onValueChange(
                     options.find((opt) => opt.toLowerCase() === currentValue) ||
-                      "",
+                    "",
                   );
                   setOpen(false);
                 }}
@@ -232,7 +232,7 @@ export const SysproxyViewer = forwardRef<DialogRef>((props, ref) => {
     }
   };
 
-  const { systemProxyAddress } = useAppData();
+  const { systemProxyAddress } = useAppStatic();
 
   const getSystemProxyAddress = useMemo(() => {
     if (!clashConfig) return "-";
@@ -561,8 +561,8 @@ export const SysproxyViewer = forwardRef<DialogRef>((props, ref) => {
                   // Вместо пропса `error` используем условные классы
                   className={cn(
                     value.bypass &&
-                      !validReg.test(value.bypass) &&
-                      "border-destructive focus-visible:ring-destructive",
+                    !validReg.test(value.bypass) &&
+                    "border-destructive focus-visible:ring-destructive",
                   )}
                 />
               </div>

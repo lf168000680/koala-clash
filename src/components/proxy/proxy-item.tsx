@@ -1,6 +1,6 @@
 // ProxyItem.tsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { useLockFn } from "ahooks";
 import { useVerge } from "@/hooks/use-verge";
 import delayManager from "@/services/delay";
@@ -26,7 +26,7 @@ const getDelayColorClass = (delay: number): string => {
   return "text-green-500";
 };
 
-export const ProxyItem = (props: Props) => {
+export const ProxyItem = memo((props: Props) => {
   const { group, proxy, selected, showType = true, onClick } = props;
 
   const presetList = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE"];
@@ -131,4 +131,4 @@ export const ProxyItem = (props: Props) => {
       </div>
     </div>
   );
-};
+});

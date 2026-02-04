@@ -7,7 +7,7 @@ import {
   DEFAULT_STATE,
   type HeadState,
 } from "./use-head-state";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 
 // 定义代理项接口
 interface IProxyItem {
@@ -90,7 +90,7 @@ const groupProxies = <T = any>(list: T[], size: number): T[][] => {
 
 export const useRenderList = (mode: string) => {
   // 使用全局数据提供者
-  const { proxies: proxiesData, refreshProxy } = useAppData();
+  const { proxies: proxiesData, refreshProxy } = useAppStatic();
   const { verge } = useVerge();
   const { width } = useWindowWidth();
   const [headStates, setHeadState] = useHeadStateNew();

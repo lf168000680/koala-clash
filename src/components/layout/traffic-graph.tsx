@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, memo } from "react";
 import { useThemeMode } from "@/services/states";
 
 const maxPoint = 30;
@@ -24,7 +24,7 @@ export interface TrafficRef {
 /**
  * draw the traffic graph
  */
-export const TrafficGraph = forwardRef<TrafficRef>((props, ref) => {
+export const TrafficGraph = memo(forwardRef<TrafficRef>((props, ref) => {
   const countRef = useRef(0);
   const styleRef = useRef(true);
   const listRef = useRef<TrafficData[]>(defaultList);
@@ -200,4 +200,4 @@ export const TrafficGraph = forwardRef<TrafficRef>((props, ref) => {
   }, [mode]);
 
   return <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />;
-});
+}));

@@ -112,12 +112,10 @@ export async function getSystemProxy() {
 
 export async function getAutotemProxy() {
   try {
-    console.log("[API] Start calling get_auto_proxy");
     const result = await invoke<{
       enable: boolean;
       url: string;
     }>("get_auto_proxy");
-    console.log("[API] get_auto_proxy success:", result);
     return result;
   } catch (error) {
     console.error("[API] get_auto_proxy failed:", error);
@@ -194,9 +192,6 @@ export async function cmdGetProxyDelay(
 ) {
   // 确保URL不为空
   const testUrl = url || "https://cp.cloudflare.com/generate_204";
-  console.log(
-    `[API] Calling delay test API, proxy: ${name}, timeout: ${timeout}ms, URL: ${testUrl}`,
-  );
 
   try {
     name = encodeURIComponent(name);
@@ -211,9 +206,6 @@ export async function cmdGetProxyDelay(
 
     // 验证返回结果中是否有delay字段，并且值是一个有效的数字
     if (result && typeof result.delay === "number") {
-      console.log(
-        `[API] Delay test API success, proxy: ${name}, delay: ${result.delay}ms`,
-      );
       return result;
     } else {
       console.error(
@@ -232,7 +224,6 @@ export async function cmdGetProxyDelay(
 
 /// 用于profile切换等场景
 export async function forceRefreshProxies() {
-  console.log("[API] Force refresh proxy cache");
   return invoke<any>("force_refresh_proxies");
 }
 

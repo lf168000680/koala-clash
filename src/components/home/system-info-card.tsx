@@ -1,20 +1,12 @@
 import { useTranslation } from "react-i18next";
 import {
-  Typography,
-  Stack,
-  Divider,
-  Chip,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import {
-  InfoOutlined,
-  SettingsOutlined,
-  WarningOutlined,
-  AdminPanelSettingsOutlined,
-  DnsOutlined,
-  ExtensionOutlined,
-} from "@mui/icons-material";
+  Info,
+  Settings,
+  TriangleAlert,
+  ShieldCheck,
+  Server,
+  Puzzle,
+} from "lucide-react";
 import { useVerge } from "@/hooks/use-verge";
 import { EnhancedCard } from "./enhanced-card";
 import useSWR from "swr";
@@ -27,6 +19,14 @@ import { useLockFn } from "ahooks";
 import { showNotice } from "@/services/noticeService";
 import { useSystemState } from "@/hooks/use-system-state";
 import { useServiceInstaller } from "@/hooks/useServiceInstaller";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const SystemInfoCard = () => {
   const { t } = useTranslation();
@@ -158,62 +158,23 @@ export const SystemInfoCard = () => {
     [verge],
   );
 
-  // 运行模式样式
-  const runningModeStyle = useMemo(
-    () => ({
-      // Sidecar或纯管理员模式允许安装服务
-      cursor:
-        isSidecarMode || (isAdminMode && isSidecarMode) ? "pointer" : "default",
-      textDecoration:
-        isSidecarMode || (isAdminMode && isSidecarMode) ? "underline" : "none",
-      display: "flex",
-      alignItems: "center",
-      gap: 0.5,
-      "&:hover": {
-        opacity: isSidecarMode || (isAdminMode && isSidecarMode) ? 0.7 : 1,
-      },
-    }),
-    [isSidecarMode, isAdminMode],
-  );
-
   // 获取模式图标和文本
   const getModeIcon = () => {
     if (isAdminMode) {
       // 判断是否为组合模式（管理员+服务）
       if (!isSidecarMode) {
         return (
-          <>
-            <AdminPanelSettingsOutlined
-              sx={{ color: "primary.main", fontSize: 16 }}
-              titleAccess={t("Administrator Mode")}
-            />
-            <DnsOutlined
-              sx={{ color: "success.main", fontSize: 16, ml: 0.5 }}
-              titleAccess={t("Service Mode")}
-            />
-          </>
+          <div className="flex items-center">
+            <ShieldCheck className="text-primary h-4 w-4" />
+            <Server className="text-green-500 h-4 w-4 ml-0.5" />
+          </div>
         );
       }
-      return (
-        <AdminPanelSettingsOutlined
-          sx={{ color: "primary.main", fontSize: 16 }}
-          titleAccess={t("Administrator Mode")}
-        />
-      );
+      return <ShieldCheck className="text-primary h-4 w-4" />;
     } else if (isSidecarMode) {
-      return (
-        <ExtensionOutlined
-          sx={{ color: "info.main", fontSize: 16 }}
-          titleAccess={t("Sidecar Mode")}
-        />
-      );
+      return <Puzzle className="text-sky-500 h-4 w-4" />;
     } else {
-      return (
-        <DnsOutlined
-          sx={{ color: "success.main", fontSize: 16 }}
-          titleAccess={t("Service Mode")}
-        />
-      );
+      return <Server className="text-green-500 h-4 w-4" />;
     }
   };
 
@@ -238,97 +199,87 @@ export const SystemInfoCard = () => {
   return (
     <EnhancedCard
       title={t("System Info")}
-      icon={<InfoOutlined />}
+      icon={<Info />}
       iconColor="error"
       action={
-        <IconButton size="small" onClick={goToSettings} title={t("Settings")}>
-          <SettingsOutlined fontSize="small" />
-        </IconButton>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToSettings}
+          title={t("Settings")}
+          className="h-8 w-8"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
       }
     >
-      <Stack spacing={1.5}>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
-            {t("OS Info")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
-            {systemState.osInfo}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography variant="body2" color="text.secondary">
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between">
+          <span className="text-sm text-muted-foreground">{t("OS Info")}</span>
+          <span className="text-sm font-medium">{systemState.osInfo}</span>
+        </div>
+        <Separator />
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">
             {t("Auto Launch")}
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
+          </span>
+          <div className="flex items-center gap-2">
             {isAdminMode && (
-              <Tooltip
-                title={t("Administrator mode may not support auto launch")}
-              >
-                <WarningOutlined sx={{ color: "warning.main", fontSize: 20 }} />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TriangleAlert className="text-orange-500 h-5 w-5" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("Administrator mode may not support auto launch")}</p>
+                </TooltipContent>
               </Tooltip>
             )}
-            <Chip
-              size="small"
-              label={autoLaunchEnabled ? t("Enabled") : t("Disabled")}
-              color={autoLaunchEnabled ? "success" : "default"}
-              variant={autoLaunchEnabled ? "filled" : "outlined"}
+            <Badge
+              variant={autoLaunchEnabled ? "default" : "outline"}
+              className={`cursor-pointer ${autoLaunchEnabled ? "bg-green-500 hover:bg-green-600" : ""}`}
               onClick={toggleAutoLaunch}
-              sx={{ cursor: "pointer" }}
-            />
-          </Stack>
-        </Stack>
-        <Divider />
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography variant="body2" color="text.secondary">
+            >
+              {autoLaunchEnabled ? t("Enabled") : t("Disabled")}
+            </Badge>
+          </div>
+        </div>
+        <Separator />
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">
             {t("Running Mode")}
-          </Typography>
-          <Typography
-            variant="body2"
-            fontWeight="medium"
+          </span>
+          <div
+            className={`flex items-center gap-1 text-sm font-medium ${
+              isSidecarMode || (isAdminMode && isSidecarMode)
+                ? "cursor-pointer underline hover:opacity-70"
+                : "cursor-default"
+            }`}
             onClick={handleRunningModeClick}
-            sx={runningModeStyle}
           >
             {getModeIcon()}
             {getModeText()}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
+          </div>
+        </div>
+        <Separator />
+        <div className="flex justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("Last Check Update")}
-          </Typography>
-          <Typography
-            variant="body2"
-            fontWeight="medium"
+          </span>
+          <span
+            className="text-sm font-medium cursor-pointer underline hover:opacity-70"
             onClick={onCheckUpdate}
-            sx={{
-              cursor: "pointer",
-              textDecoration: "underline",
-              "&:hover": { opacity: 0.7 },
-            }}
           >
             {systemState.lastCheckUpdate}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" color="text.secondary">
+          </span>
+        </div>
+        <Separator />
+        <div className="flex justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("Verge Version")}
-          </Typography>
-          <Typography variant="body2" fontWeight="medium">
-            v{appVersion}
-          </Typography>
-        </Stack>
-      </Stack>
+          </span>
+          <span className="text-sm font-medium">v{appVersion}</span>
+        </div>
+      </div>
     </EnhancedCard>
   );
 };

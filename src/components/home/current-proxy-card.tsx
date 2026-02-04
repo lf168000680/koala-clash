@@ -1,38 +1,38 @@
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  Typography,
-  Chip,
-  Button,
-  alpha,
-  useTheme,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  SelectChangeEvent,
-  Tooltip,
-  IconButton,
-} from "@mui/material";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import {
-  SignalWifi4Bar as SignalStrong,
-  SignalWifi3Bar as SignalGood,
-  SignalWifi2Bar as SignalMedium,
-  SignalWifi1Bar as SignalWeak,
-  SignalWifi0Bar as SignalNone,
-  WifiOff as SignalError,
+  SignalHigh,
+  SignalMedium,
+  SignalLow,
+  Signal,
+  WifiOff,
   ChevronRight,
-  SortRounded,
-  AccessTimeRounded,
-  SortByAlphaRounded,
-} from "@mui/icons-material";
+  ArrowUpDown,
+  Clock,
+  ArrowDownAZ,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EnhancedCard } from "@/components/home/enhanced-card";
 import { updateProxy, deleteConnection } from "@/services/api";
 import delayManager from "@/services/delay";
 import { useVerge } from "@/hooks/use-verge";
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic, useAppRealtime } from "@/providers/app-data-provider";
+import { cn } from "@root/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // 本地存储的键名
 const STORAGE_KEY_GROUP = "clash-verge-selected-proxy-group";
@@ -55,30 +55,54 @@ function convertDelayColor(delayValue: number) {
 
   switch (mainColor) {
     case "success":
-      return "success";
+      return "bg-green-500";
     case "warning":
-      return "warning";
+      return "bg-yellow-500";
     case "error":
-      return "error";
+      return "bg-red-500";
     case "primary":
-      return "primary";
+      return "bg-primary";
     default:
-      return "default";
+      return "bg-gray-500";
   }
 }
 
 function getSignalIcon(delay: number) {
   if (delay < 0)
-    return { icon: <SignalNone />, text: "未测试", color: "text.secondary" };
+    return {
+      icon: <Signal className="text-muted-foreground" size={16} />,
+      text: "未测试",
+      color: "text-muted-foreground",
+    };
   if (delay >= 10000)
-    return { icon: <SignalError />, text: "超时", color: "error.main" };
+    return {
+      icon: <WifiOff className="text-destructive" size={16} />,
+      text: "超时",
+      color: "text-destructive",
+    };
   if (delay >= 500)
-    return { icon: <SignalWeak />, text: "延迟较高", color: "error.main" };
+    return {
+      icon: <SignalLow className="text-destructive" size={16} />,
+      text: "延迟较高",
+      color: "text-destructive",
+    };
   if (delay >= 300)
-    return { icon: <SignalMedium />, text: "延迟中等", color: "warning.main" };
+    return {
+      icon: <SignalMedium className="text-yellow-500" size={16} />,
+      text: "延迟中等",
+      color: "text-yellow-500",
+    };
   if (delay >= 200)
-    return { icon: <SignalGood />, text: "延迟良好", color: "info.main" };
-  return { icon: <SignalStrong />, text: "延迟极佳", color: "success.main" };
+    return {
+      icon: <SignalHigh className="text-blue-500" size={16} />,
+      text: "延迟良好",
+      color: "text-blue-500",
+    };
+  return {
+    icon: <SignalHigh className="text-green-500" size={16} />,
+    text: "延迟极佳",
+    color: "text-green-500",
+  };
 }
 
 // 简单的防抖函数
@@ -93,9 +117,9 @@ function debounce(fn: Function, ms = 100) {
 export const CurrentProxyCard = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const theme = useTheme();
   const { verge } = useVerge();
-  const { proxies, connections, clashConfig, refreshProxy } = useAppData();
+  const { proxies, clashConfig, refreshProxy } = useAppStatic();
+  const { connections } = useAppRealtime();
 
   // 判断模式
   const mode = clashConfig?.mode?.toLowerCase() || "rule";
@@ -154,10 +178,10 @@ export const CurrentProxyCard = () => {
       const primaryGroup =
         proxies.groups.find((group: { name: string }) =>
           primaryKeywords.some((keyword) =>
-            group.name.toLowerCase().includes(keyword.toLowerCase()),
+            group.name.toLowerCase().includes(keyword),
           ),
         ) ||
-        proxies.groups.filter((g: { name: string }) => g.name !== "GLOBAL")[0];
+        proxies.groups.find((g: { name: string }) => g.name !== "GLOBAL");
 
       return primaryGroup?.name || "";
     };
@@ -198,528 +222,367 @@ export const CurrentProxyCard = () => {
     if (!proxies) return;
 
     setState((prev) => {
-      // 只保留 Selector 类型的组用于选择
-      const filteredGroups = proxies.groups
-        .filter((g: { name: string; type?: string }) => g.type === "Selector")
-        .map(
-          (g: { name: string; now: string; all: Array<{ name: string }> }) => ({
-            name: g.name,
-            now: g.now || "",
-            all: g.all.map((p: { name: string }) => p.name),
-          }),
-        );
+      // 1. 更新 proxyData
+      const newProxyData = {
+        groups: proxies.groups || [],
+        records: proxies.proxies || {},
+        globalProxy: proxies.global || "",
+        directProxy: { name: "DIRECT" },
+      };
 
-      let newProxy = "";
-      let newDisplayProxy = null;
-      let newGroup = prev.selection.group;
+      // 2. 验证当前选择的组是否仍然存在
+      let currentGroup = prev.selection.group;
+      const groupExists = newProxyData.groups.some(
+        (g: { name: string }) => g.name === currentGroup,
+      );
 
-      // 根据模式确定新代理
-      if (isDirectMode) {
-        newGroup = "DIRECT";
-        newProxy = "DIRECT";
-        newDisplayProxy = proxies.records?.DIRECT || { name: "DIRECT" }; // 确保非空
-      } else if (isGlobalMode && proxies.global) {
-        newGroup = "GLOBAL";
-        newProxy = proxies.global.now || "";
-        newDisplayProxy = proxies.records?.[newProxy] || null;
-      } else {
-        const currentGroup = filteredGroups.find(
-          (g: { name: string }) => g.name === prev.selection.group,
-        );
-
-        // 如果当前组不存在或为空，自动选择第一个 selector 类型的组
-        if (!currentGroup && filteredGroups.length > 0) {
-          const selectorGroup = filteredGroups[0];
-          if (selectorGroup) {
-            newGroup = selectorGroup.name;
-            newProxy = selectorGroup.now || selectorGroup.all[0] || "";
-            newDisplayProxy = proxies.records?.[newProxy] || null;
-
-            if (!isGlobalMode && !isDirectMode) {
-              localStorage.setItem(STORAGE_KEY_GROUP, newGroup);
-              if (newProxy) {
-                localStorage.setItem(STORAGE_KEY_PROXY, newProxy);
-              }
-            }
-          }
-        } else if (currentGroup) {
-          newProxy = currentGroup.now || currentGroup.all[0] || "";
-          newDisplayProxy = proxies.records?.[newProxy] || null;
+      // 如果当前组不存在，或者是 GLOBAL/DIRECT 模式切换，需要重新确定组
+      if (!groupExists && !isGlobalMode && !isDirectMode) {
+        // 尝试恢复之前保存的组
+        const savedGroup = localStorage.getItem(STORAGE_KEY_GROUP);
+        if (
+          savedGroup &&
+          newProxyData.groups.some((g: { name: string }) => g.name === savedGroup)
+        ) {
+          currentGroup = savedGroup;
+        } else {
+          // 如果保存的组也不存在，使用默认策略
+          const primaryKeywords = [
+            "auto",
+            "select",
+            "proxy",
+            "节点选择",
+            "自动选择",
+          ];
+          const primaryGroup =
+            newProxyData.groups.find((group: { name: string }) =>
+              primaryKeywords.some((keyword) =>
+                group.name.toLowerCase().includes(keyword.toLowerCase()),
+              ),
+            ) ||
+            newProxyData.groups.find((g: { name: string }) => g.name !== "GLOBAL");
+          currentGroup = primaryGroup?.name || "";
         }
       }
 
-      // 返回新状态
+      // 3. 获取当前组的选定代理
+      let currentProxyName = "";
+      if (isGlobalMode) {
+        currentGroup = "GLOBAL";
+        currentProxyName = newProxyData.globalProxy;
+      } else if (isDirectMode) {
+        currentGroup = "DIRECT";
+        currentProxyName = "DIRECT";
+      } else {
+        const groupData = newProxyData.groups.find(
+          (g: { name: string }) => g.name === currentGroup,
+        );
+        currentProxyName = groupData?.now || "";
+      }
+
+      // 4. 获取显示用的代理对象
+      let displayProxyObj = newProxyData.records[currentProxyName];
+
+      // 特殊情况处理
+      if (currentProxyName === "DIRECT") {
+        displayProxyObj = { name: "DIRECT", type: "Direct" };
+      } else if (currentProxyName === "REJECT") {
+        displayProxyObj = { name: "REJECT", type: "Reject" };
+      }
+
+      // 如果是 GLOBAL 组，它本身也是一个 selector，但我们需要显示它选中的那个节点
+      // 如果当前组是 selector 类型，now 指向的是选中的节点名
+      // 我们需要显示的是那个被选中节点的详细信息
+      // 上面的 logic 已经处理了大部分情况，但在 GLOBAL 模式下，globalProxy 是选中的节点名
+
       return {
-        proxyData: {
-          groups: filteredGroups,
-          records: proxies.records || {},
-          globalProxy: proxies.global?.now || "",
-          directProxy: proxies.records?.DIRECT || { name: "DIRECT" },
-        },
+        proxyData: newProxyData,
         selection: {
-          group: newGroup,
-          proxy: newProxy,
+          group: currentGroup,
+          proxy: currentProxyName,
         },
-        displayProxy: newDisplayProxy,
+        displayProxy: displayProxyObj,
       };
     });
   }, [proxies, isGlobalMode, isDirectMode]);
 
-  // 使用防抖包装状态更新
-  const debouncedSetState = useCallback(
-    debounce((updateFn: (prev: ProxyState) => ProxyState) => {
-      setState(updateFn);
-    }, 300),
+  // 处理组切换
+  const handleChangeGroup = (groupName: string) => {
+    setState((prev) => ({
+      ...prev,
+      selection: {
+        ...prev.selection,
+        group: groupName,
+      },
+    }));
+    localStorage.setItem(STORAGE_KEY_GROUP, groupName);
+  };
+
+  // 处理代理切换
+  const handleChangeProxy = async (proxyName: string) => {
+    const { group } = state.selection;
+    if (!group) return;
+
+    try {
+      // 乐观更新 UI
+      setState((prev) => {
+        const newDisplayProxy = prev.proxyData.records[proxyName] || {
+          name: proxyName,
+        };
+        return {
+          ...prev,
+          selection: { ...prev.selection, proxy: proxyName },
+          displayProxy: newDisplayProxy,
+        };
+      });
+
+      // 发送请求
+      await updateProxy(group, proxyName);
+      localStorage.setItem(STORAGE_KEY_PROXY, proxyName);
+
+      // 如果开启了自动断开连接
+      if (verge?.auto_close_connection) {
+        // 使用防抖或延迟来避免频繁断开
+        debounceCloseConnections();
+      }
+
+      // 刷新数据
+      refreshProxy();
+    } catch (err) {
+      console.error("Failed to update proxy", err);
+      // 发生错误时刷新数据以恢复正确状态
+      refreshProxy();
+    }
+  };
+
+  // 防抖断开连接
+  const debounceCloseConnections = useCallback(
+    debounce(() => {
+      closeAllConnections();
+    }, 500),
     [],
   );
 
-  // 处理代理组变更
-  const handleGroupChange = useCallback(
-    (event: SelectChangeEvent) => {
-      if (isGlobalMode || isDirectMode) return;
-
-      const newGroup = event.target.value;
-
-      localStorage.setItem(STORAGE_KEY_GROUP, newGroup);
-
-      setState((prev) => {
-        const group = prev.proxyData.groups.find(
-          (g: { name: string }) => g.name === newGroup,
+  // 关闭所有连接
+  const closeAllConnections = async () => {
+    try {
+      // 获取当前活跃连接
+      // 注意：这里我们应该使用最新的连接数据，但 connections 可能是旧的
+      // 最好是调用 API 获取最新连接，或者直接关闭所有
+      // 这里的实现是遍历当前已知的连接并关闭
+      if (connections && connections.data && connections.data.length > 0) {
+        // 并行关闭所有连接
+        await Promise.all(
+          (connections.data as any[]).map((conn: any) => deleteConnection(conn.id)),
         );
-        if (group) {
-          return {
-            ...prev,
-            selection: {
-              group: newGroup,
-              proxy: group.now,
-            },
-            displayProxy: prev.proxyData.records[group.now] || null,
-          };
-        }
-        return {
-          ...prev,
-          selection: {
-            ...prev.selection,
-            group: newGroup,
-          },
-        };
+      }
+    } catch (err) {
+      console.error("Failed to close connections", err);
+    }
+  };
+
+  // 排序处理
+  const toggleSortType = () => {
+    setSortType((prev) => {
+      const next = ((prev + 1) % 3) as ProxySortType;
+      localStorage.setItem(STORAGE_KEY_SORT_TYPE, String(next));
+      return next;
+    });
+  };
+
+  // 获取排序后的代理列表
+  const sortedProxies = useMemo(() => {
+    const { group } = state.selection;
+    if (!group) return [];
+
+    const groupData = state.proxyData.groups.find((g) => g.name === group);
+    if (!groupData || !groupData.all) return [];
+
+    let list = groupData.all.map((name) => {
+      const item = state.proxyData.records[name];
+      // 确保有 delay 字段，如果没有则默认为 0 (或 -1 表示未测试)
+      const history = item?.history || [];
+      const delay =
+        history.length > 0 ? history[history.length - 1].delay : -1;
+      return {
+        name,
+        delay,
+        type: item?.type || "Unknown",
+      };
+    });
+
+    // 0: 默认 (配置文件顺序) - 不做额外排序，直接返回
+    if (sortType === 0) return list;
+
+    // 1: 按延迟
+    if (sortType === 1) {
+      return [...list].sort((a, b) => {
+        // 未测试的排在后面
+        if (a.delay <= 0) return 1;
+        if (b.delay <= 0) return -1;
+        return a.delay - b.delay;
       });
-    },
-    [isGlobalMode, isDirectMode],
-  );
+    }
 
-  // 处理代理节点变更
-  const handleProxyChange = useCallback(
-    async (event: SelectChangeEvent) => {
-      if (isDirectMode) return;
+    // 2: 按字母
+    if (sortType === 2) {
+      return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    }
 
-      const newProxy = event.target.value;
-      const currentGroup = state.selection.group;
-      const previousProxy = state.selection.proxy;
+    return list;
+  }, [state.selection.group, state.proxyData, sortType]);
 
-      debouncedSetState((prev: ProxyState) => ({
-        ...prev,
-        selection: {
-          ...prev.selection,
-          proxy: newProxy,
-        },
-        displayProxy: prev.proxyData.records[newProxy] || null,
-      }));
+  // 准备显示数据
+  const displayData = useMemo(() => {
+    const { displayProxy } = state;
 
-      if (!isGlobalMode && !isDirectMode) {
-        localStorage.setItem(STORAGE_KEY_PROXY, newProxy);
-      }
+    if (!displayProxy)
+      return {
+        name: "Loading...",
+        type: "Unknown",
+        delay: -1,
+        color: "bg-gray-500",
+      };
 
-      try {
-        await updateProxy(currentGroup, newProxy);
+    const history = displayProxy.history || [];
+    const delay =
+      history.length > 0 ? history[history.length - 1].delay : -1;
+    const color = convertDelayColor(delay);
 
-        // 自动关闭连接设置
-        if (verge?.auto_close_connection && previousProxy) {
-          connections.data.forEach((conn: any) => {
-            if (conn.chains.includes(previousProxy)) {
-              deleteConnection(conn.id);
-            }
-          });
-        }
-
-        // 延长刷新延迟时间
-        setTimeout(() => {
-          refreshProxy();
-        }, 500);
-      } catch (error) {
-        console.error("更新代理失败", error);
-      }
-    },
-    [
-      isDirectMode,
-      isGlobalMode,
-      state.proxyData.records,
-      state.selection,
-      verge?.auto_close_connection,
-      refreshProxy,
-      debouncedSetState,
-      connections.data,
-    ],
-  );
-
-  // 导航到代理页面
-  const goToProxies = useCallback(() => {
-    navigate("/");
-  }, [navigate]);
-
-  // 获取要显示的代理节点
-  const currentProxy = useMemo(() => {
-    return state.displayProxy;
+    return {
+      name: displayProxy.name,
+      type: displayProxy.type,
+      delay,
+      color,
+    };
   }, [state.displayProxy]);
 
-  // 获取当前节点的延迟（增加非空校验）
-  const currentDelay =
-    currentProxy && state.selection.group
-      ? delayManager.getDelayFix(currentProxy, state.selection.group)
-      : -1;
-
-  // 信号图标（增加非空校验）
-  const signalInfo =
-    currentProxy && state.selection.group
-      ? getSignalIcon(currentDelay)
-      : { icon: <SignalNone />, text: "未初始化", color: "text.secondary" };
-
-  // 自定义渲染选择框中的值
-  const renderProxyValue = useCallback(
-    (selected: string) => {
-      if (!selected || !state.proxyData.records[selected]) return selected;
-
-      const delayValue = delayManager.getDelayFix(
-        state.proxyData.records[selected],
-        state.selection.group,
-      );
-
-      return (
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography noWrap>{selected}</Typography>
-          <Chip
-            size="small"
-            label={delayManager.formatDelay(delayValue)}
-            color={convertDelayColor(delayValue)}
-          />
-        </Box>
-      );
-    },
-    [state.proxyData.records, state.selection.group],
-  );
-
-  // 排序类型变更
-  const handleSortTypeChange = useCallback(() => {
-    const newSortType = ((sortType + 1) % 3) as ProxySortType;
-    setSortType(newSortType);
-    localStorage.setItem(STORAGE_KEY_SORT_TYPE, newSortType.toString());
-  }, [sortType]);
-
-  // 排序代理函数（增加非空校验）
-  const sortProxies = useCallback(
-    (proxies: ProxyOption[]) => {
-      if (!proxies || sortType === 0) return proxies;
-
-      // 确保数据存在
-      if (!state.proxyData.records || !state.selection.group) return proxies;
-
-      const list = [...proxies];
-
-      if (sortType === 1) {
-        list.sort((a, b) => {
-          const recordA = state.proxyData.records[a.name];
-          const recordB = state.proxyData.records[b.name];
-
-          // 处理 record 不存在的情况
-          if (!recordA) return 1;
-          if (!recordB) return -1;
-
-          const ad = delayManager.getDelayFix(recordA, state.selection.group);
-          const bd = delayManager.getDelayFix(recordB, state.selection.group);
-
-          if (ad === -1 || ad === -2) return 1;
-          if (bd === -1 || bd === -2) return -1;
-
-          return ad - bd;
-        });
-      } else {
-        list.sort((a, b) => a.name.localeCompare(b.name));
-      }
-
-      return list;
-    },
-    [sortType, state.proxyData.records, state.selection.group],
-  );
-
-  // 计算要显示的代理选项（增加非空校验）
-  const proxyOptions = useMemo(() => {
-    if (isDirectMode) {
-      return [{ name: "DIRECT" }];
-    }
-    if (isGlobalMode && proxies?.global) {
-      const options = proxies.global.all
-        .filter((p: any) => {
-          const name = typeof p === "string" ? p : p.name;
-          return name !== "DIRECT" && name !== "REJECT";
-        })
-        .map((p: any) => ({
-          name: typeof p === "string" ? p : p.name,
-        }));
-
-      return sortProxies(options);
-    }
-
-    // 规则模式
-    const group = state.selection.group
-      ? state.proxyData.groups.find((g) => g.name === state.selection.group)
-      : null;
-
-    if (group) {
-      const options = group.all.map((name) => ({ name }));
-      return sortProxies(options);
-    }
-
-    return [];
-  }, [
-    isDirectMode,
-    isGlobalMode,
-    proxies,
-    state.proxyData,
-    state.selection.group,
-    sortProxies,
-  ]);
-
-  // 获取排序图标
-  const getSortIcon = () => {
-    switch (sortType) {
-      case 1:
-        return <AccessTimeRounded fontSize="small" />;
-      case 2:
-        return <SortByAlphaRounded fontSize="small" />;
-      default:
-        return <SortRounded fontSize="small" />;
-    }
-  };
-
-  // 获取排序提示文本
-  const getSortTooltip = () => {
-    switch (sortType) {
-      case 0:
-        return t("Sort by default");
-      case 1:
-        return t("Sort by delay");
-      case 2:
-        return t("Sort by name");
-      default:
-        return "";
-    }
-  };
+  const signalInfo = getSignalIcon(displayData.delay);
 
   return (
     <EnhancedCard
-      title={t("Current Node")}
-      icon={
-        <Tooltip
-          title={
-            currentProxy
-              ? `${signalInfo.text}: ${delayManager.formatDelay(currentDelay)}`
-              : "无代理节点"
-          }
-        >
-          <Box sx={{ color: signalInfo.color }}>
-            {currentProxy ? signalInfo.icon : <SignalNone color="disabled" />}
-          </Box>
-        </Tooltip>
-      }
-      iconColor={currentProxy ? "primary" : undefined}
-      action={
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Tooltip title={getSortTooltip()}>
-            <IconButton
-              size="small"
-              color="inherit"
-              onClick={handleSortTypeChange}
-              sx={{ mr: 1 }}
-            >
-              {getSortIcon()}
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={goToProxies}
-            sx={{ borderRadius: 1.5 }}
-            endIcon={<ChevronRight fontSize="small" />}
-          >
-            {t("Label-Proxies")}
-          </Button>
-        </Box>
-      }
+      icon={<SignalHigh className="w-5 h-5 text-primary" />}
+      title={t("Current Proxy")}
+      className="h-full"
     >
-      {currentProxy ? (
-        <Box>
-          {/* 代理节点信息显示 */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              p: 1,
-              mb: 2,
-              borderRadius: 1,
-              bgcolor: alpha(theme.palette.primary.main, 0.05),
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-            }}
-          >
-            <Box>
-              <Typography variant="body1" fontWeight="medium">
-                {currentProxy.name}
-              </Typography>
-
-              <Box
-                sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}
-              >
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mr: 1 }}
-                >
-                  {currentProxy.type}
-                </Typography>
-                {isGlobalMode && (
-                  <Chip
-                    size="small"
-                    label={t("Global Mode")}
-                    color="primary"
-                    sx={{ mr: 0.5 }}
-                  />
-                )}
-                {isDirectMode && (
-                  <Chip
-                    size="small"
-                    label={t("Direct Mode")}
-                    color="success"
-                    sx={{ mr: 0.5 }}
-                  />
-                )}
-                {/* 节点特性 */}
-                {currentProxy.udp && (
-                  <Chip size="small" label="UDP" variant="outlined" />
-                )}
-                {currentProxy.tfo && (
-                  <Chip size="small" label="TFO" variant="outlined" />
-                )}
-                {currentProxy.xudp && (
-                  <Chip size="small" label="XUDP" variant="outlined" />
-                )}
-                {currentProxy.mptcp && (
-                  <Chip size="small" label="MPTCP" variant="outlined" />
-                )}
-                {currentProxy.smux && (
-                  <Chip size="small" label="SMUX" variant="outlined" />
-                )}
-              </Box>
-            </Box>
-
-            {/* 显示延迟 */}
-            {currentProxy && !isDirectMode && (
-              <Chip
-                size="small"
-                label={delayManager.formatDelay(currentDelay)}
-                color={convertDelayColor(currentDelay)}
-              />
-            )}
-          </Box>
-          {/* 代理组选择器 */}
-          <FormControl
-            fullWidth
-            variant="outlined"
-            size="small"
-            sx={{ mb: 1.5 }}
-          >
-            <InputLabel id="proxy-group-select-label">{t("Group")}</InputLabel>
+      <div className="flex flex-col gap-3">
+        {/* 代理组选择 */}
+        {!isGlobalMode && !isDirectMode && (
+          <div className="flex items-center justify-between gap-2">
             <Select
-              labelId="proxy-group-select-label"
               value={state.selection.group}
-              onChange={handleGroupChange}
-              label={t("Group")}
-              disabled={isGlobalMode || isDirectMode}
+              onValueChange={handleChangeGroup}
+              disabled={state.proxyData.groups.length === 0}
             >
-              {state.proxyData.groups.map((group) => (
-                <MenuItem key={group.name} value={group.name}>
-                  {group.name}
-                </MenuItem>
-              ))}
+              <SelectTrigger className="w-full h-8 text-xs">
+                <SelectValue placeholder={t("Select Group")} />
+              </SelectTrigger>
+              <SelectContent>
+                {state.proxyData.groups.map((group) => (
+                  <SelectItem key={group.name} value={group.name}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </FormControl>
+          </div>
+        )}
 
-          {/* 代理节点选择器 */}
-          <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 0 }}>
-            <InputLabel id="proxy-select-label">{t("Proxy")}</InputLabel>
+        {/* 代理节点选择 */}
+        {!isGlobalMode && !isDirectMode && (
+          <div className="flex items-center gap-2">
             <Select
-              labelId="proxy-select-label"
               value={state.selection.proxy}
-              onChange={handleProxyChange}
-              label={t("Proxy")}
-              disabled={isDirectMode}
-              renderValue={renderProxyValue}
-              MenuProps={{
-                PaperProps: {
-                  style: {
-                    maxHeight: 500,
-                  },
-                },
-              }}
+              onValueChange={handleChangeProxy}
+              disabled={!state.selection.group}
             >
-              {isDirectMode
-                ? null
-                : proxyOptions.map((proxy, index) => {
-                    const delayValue =
-                      state.proxyData.records[proxy.name] &&
-                      state.selection.group
-                        ? delayManager.getDelayFix(
-                            state.proxyData.records[proxy.name],
-                            state.selection.group,
-                          )
-                        : -1;
-                    return (
-                      <MenuItem
-                        key={`${proxy.name}-${index}`}
-                        value={proxy.name}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          width: "100%",
-                          pr: 1,
-                        }}
-                      >
-                        <Typography noWrap sx={{ flex: 1, mr: 1 }}>
+              <SelectTrigger className="w-full h-8 text-xs">
+                <SelectValue placeholder={t("Select Proxy")} />
+              </SelectTrigger>
+              <SelectContent>
+                {sortedProxies.map((proxy) => {
+                  const proxyDelay = proxy.delay;
+                  let delayColorClass = "text-muted-foreground";
+                  if (proxyDelay > 0) {
+                    if (proxyDelay < 200) delayColorClass = "text-green-500";
+                    else if (proxyDelay < 500)
+                      delayColorClass = "text-yellow-500";
+                    else delayColorClass = "text-red-500";
+                  }
+
+                  return (
+                    <SelectItem key={proxy.name} value={proxy.name}>
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="truncate max-w-[120px]">
                           {proxy.name}
-                        </Typography>
-                        <Chip
-                          size="small"
-                          label={delayManager.formatDelay(delayValue)}
-                          color={convertDelayColor(delayValue)}
-                          sx={{
-                            minWidth: "60px",
-                            height: "22px",
-                            flexShrink: 0,
-                          }}
-                        />
-                      </MenuItem>
-                    );
-                  })}
+                        </span>
+                        <span className={cn("text-xs", delayColorClass)}>
+                          {proxyDelay > 0 ? `${proxyDelay}ms` : "-"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
             </Select>
-          </FormControl>
-        </Box>
-      ) : (
-        <Box sx={{ textAlign: "center", py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
-            {t("No active proxy node")}
-          </Typography>
-        </Box>
-      )}
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={toggleSortType}
+                  >
+                    {sortType === 0 && <ArrowUpDown size={16} />}
+                    {sortType === 1 && <Clock size={16} />}
+                    {sortType === 2 && <ArrowDownAZ size={16} />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {sortType === 0 && t("Default Sort")}
+                    {sortType === 1 && t("Sort by Delay")}
+                    {sortType === 2 && t("Sort by Name")}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
+
+        {/* 详细信息展示 */}
+        <div className="flex items-center gap-3 p-3 mt-1 rounded-lg bg-muted/50 border border-border/50">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm truncate">
+                {displayData.name}
+              </span>
+              <Badge variant="secondary" className="text-[10px] h-5 px-1">
+                {displayData.type}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {signalInfo.icon}
+              <span>
+                {displayData.delay > 0 ? `${displayData.delay}ms` : "N/A"}
+              </span>
+              <span className="mx-1">•</span>
+              <span>{signalInfo.text}</span>
+            </div>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+            onClick={() => navigate("/proxies")}
+          >
+            <ChevronRight size={18} />
+          </Button>
+        </div>
+      </div>
     </EnhancedCard>
   );
 };

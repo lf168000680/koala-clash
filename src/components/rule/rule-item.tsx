@@ -1,5 +1,6 @@
 // RuleItem.tsx
 
+import { memo } from "react";
 import { cn } from "@root/lib/utils"; // Импортируем утилиту для классов
 
 // Массив CSS-классов для раскрашивания названий прокси
@@ -63,4 +64,4 @@ const RuleItem = (props: Props) => {
   );
 };
 
-export default RuleItem;
+export default memo(RuleItem);

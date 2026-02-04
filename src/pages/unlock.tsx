@@ -1,30 +1,23 @@
 import { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  Divider,
-  Typography,
-  Chip,
-  Tooltip,
-  CircularProgress,
-  alpha,
-  useTheme,
-  Grid,
-} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { BasePage, BaseEmpty } from "@/components/base";
 import { useLockFn } from "ahooks";
 import {
-  CheckCircleOutlined,
-  CancelOutlined,
-  HelpOutline,
-  PendingOutlined,
-  RefreshRounded,
-  AccessTimeOutlined,
-} from "@mui/icons-material";
+  CheckCircle,
+  XCircle,
+  HelpCircle,
+  Clock,
+  RefreshCw,
+  RefreshCcw,
+} from "lucide-react";
 import { showNotice } from "@/services/noticeService";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@root/lib/utils";
 
 // 定义流媒体检测项类型
 interface UnlockItem {
@@ -40,7 +33,6 @@ const UNLOCK_RESULTS_TIME_KEY = "clash_verge_unlock_time";
 
 const UnlockPage = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   // 保存所有流媒体检测项的状态
   const [unlockItems, setUnlockItems] = useState<UnlockItem[]>([]);
@@ -154,7 +146,7 @@ const UnlockPage = () => {
     } catch (err: any) {
       setIsCheckingAll(false);
       showNotice("error", err?.message || err?.toString() || "检测超时或失败");
-      alert("检测超时或失败: " + (err?.message || err));
+      // alert("检测超时或失败: " + (err?.message || err));
       console.error("Failed to check media unlock:", err);
     }
   });
@@ -186,218 +178,143 @@ const UnlockPage = () => {
     } catch (err: any) {
       setLoadingItems((prev) => prev.filter((item) => item !== name));
       showNotice("error", err?.message || err?.toString() || `检测${name}失败`);
-      alert("检测超时或失败: " + (err?.message || err));
+      // alert("检测超时或失败: " + (err?.message || err));
       console.error(`Failed to check ${name}:`, err);
     }
   });
 
-  // 获取状态对应的颜色
-  const getStatusColor = (status: string) => {
-    if (status === "Pending") return "default";
-    if (status === "Yes") return "success";
-    if (status === "No") return "error";
-    if (status === "Soon") return "warning";
-    if (status.includes("Failed")) return "error";
-    if (status === "Completed") return "info";
+  // 获取状态对应的图标
+  const getStatusIcon = (status: string) => {
+    if (status === "Pending") return <RefreshCw className="h-3.5 w-3.5" />;
+    if (status === "Yes") return <CheckCircle className="h-3.5 w-3.5" />;
+    if (status === "No") return <XCircle className="h-3.5 w-3.5" />;
+    if (status === "Soon") return <Clock className="h-3.5 w-3.5" />;
+    return <HelpCircle className="h-3.5 w-3.5" />;
+  };
+
+  // 获取状态对应的样式
+  const getStatusClass = (status: string) => {
+    if (status === "Yes") return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800";
+    if (status === "No") return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
+    if (status === "Soon") return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+    if (status === "Completed") return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+    if (status.includes("Failed")) return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
+    
     if (
       status === "Disallowed ISP" ||
       status === "Blocked" ||
       status === "Unsupported Country/Region"
     ) {
-      return "error";
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
     }
-    return "default";
+    
+    return "bg-secondary text-secondary-foreground border-transparent";
   };
 
-  // 获取状态对应的图标
-  const getStatusIcon = (status: string) => {
-    if (status === "Pending") return <PendingOutlined />;
-    if (status === "Yes") return <CheckCircleOutlined />;
-    if (status === "No") return <CancelOutlined />;
-    if (status === "Soon") return <AccessTimeOutlined />;
-    if (status.includes("Failed")) return <HelpOutline />;
-    return <HelpOutline />;
+  // 获取边框颜色类
+  const getBorderColorClass = (status: string) => {
+    if (status === "Yes") return "border-l-green-500";
+    if (status === "No") return "border-l-red-500";
+    if (status === "Soon") return "border-l-yellow-500";
+    if (status.includes("Failed")) return "border-l-red-500";
+    if (status === "Completed") return "border-l-blue-500";
+    return "border-l-border";
   };
-
-  // 获取状态对应的背景色
-  const getStatusBgColor = (status: string) => {
-    if (status === "Yes") return alpha(theme.palette.success.main, 0.05);
-    if (status === "No") return alpha(theme.palette.error.main, 0.05);
-    if (status === "Soon") return alpha(theme.palette.warning.main, 0.05);
-    if (status.includes("Failed")) return alpha(theme.palette.error.main, 0.03);
-    if (status === "Completed") return alpha(theme.palette.info.main, 0.05);
-    return "transparent";
-  };
-
-  // 获取状态对应的边框色
-  const getStatusBorderColor = (status: string) => {
-    if (status === "Yes") return theme.palette.success.main;
-    if (status === "No") return theme.palette.error.main;
-    if (status === "Soon") return theme.palette.warning.main;
-    if (status.includes("Failed")) return theme.palette.error.main;
-    if (status === "Completed") return theme.palette.info.main;
-    return theme.palette.divider;
-  };
-
-  const isDark = theme.palette.mode === "dark";
 
   return (
     <BasePage
       title={t("Unlock Test")}
       header={
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <div className="flex items-center gap-2">
           <Button
-            variant="contained"
-            size="small"
+            size="sm"
             disabled={isCheckingAll}
             onClick={checkAllMedia}
-            startIcon={
-              isCheckingAll ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <RefreshRounded />
-              )
-            }
           >
+            {isCheckingAll ? (
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="mr-2 h-4 w-4" />
+            )}
             {isCheckingAll ? t("Testing...") : t("Test All")}
           </Button>
-        </Box>
+        </div>
       }
     >
       {unlockItems.length === 0 ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "50%",
-          }}
-        >
+        <div className="flex h-1/2 justify-center items-center">
           <BaseEmpty text={t("No unlock test items")} />
-        </Box>
+        </div>
       ) : (
-        <Grid container spacing={1.5} columns={{ xs: 1, sm: 2, md: 3 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-1">
           {unlockItems.map((item) => (
-            <Grid size={1}>
-              <Card
-                variant="outlined"
-                sx={{
-                  height: "100%",
-                  borderRadius: 2,
-                  borderLeft: `4px solid ${getStatusBorderColor(item.status)}`,
-                  backgroundColor: isDark ? "#282a36" : "#ffffff",
-                  position: "relative",
-                  overflow: "hidden",
-                  "&:hover": {
-                    backgroundColor: isDark
-                      ? alpha(theme.palette.primary.dark, 0.05)
-                      : alpha(theme.palette.primary.light, 0.05),
-                  },
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <Box sx={{ p: 1.3, flex: 1 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: "1rem",
-                        color: "text.primary",
-                      }}
-                    >
-                      {item.name}
-                    </Typography>
-                    <Tooltip title={t("Test")}>
-                      <span>
+            <Card
+              key={item.name}
+              className={cn(
+                "overflow-hidden border-l-4 transition-colors hover:bg-muted/50",
+                getBorderColorClass(item.status)
+              )}
+            >
+              <CardContent className="p-3 flex flex-col h-full gap-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-base truncate pr-2">
+                    {item.name}
+                  </h3>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
                         <Button
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          disabled={
-                            loadingItems.includes(item.name) || isCheckingAll
-                          }
-                          sx={{
-                            minWidth: "32px",
-                            width: "32px",
-                            height: "32px",
-                            //p: 0,
-                            borderRadius: "50%",
-                          }}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full shrink-0"
+                          disabled={loadingItems.includes(item.name) || isCheckingAll}
                           onClick={() => checkSingleMedia(item.name)}
                         >
                           {loadingItems.includes(item.name) ? (
-                            <CircularProgress size={16} />
+                            <RefreshCw className="h-4 w-4 animate-spin" />
                           ) : (
-                            <RefreshRounded fontSize="small" />
+                            <RefreshCcw className="h-4 w-4" />
                           )}
                         </Button>
-                      </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("Test")}</p>
+                      </TooltipContent>
                     </Tooltip>
-                  </Box>
+                  </TooltipProvider>
+                </div>
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 1,
-                    }}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge 
+                    variant="outline" 
+                    className={cn("gap-1 px-2 py-0.5", getStatusClass(item.status))}
                   >
-                    <Chip
-                      label={t(item.status)}
-                      color={getStatusColor(item.status)}
-                      size="small"
-                      icon={getStatusIcon(item.status)}
-                      sx={{
-                        fontWeight:
-                          item.status === "Pending" ? "normal" : "bold",
-                      }}
-                    />
+                    {getStatusIcon(item.status)}
+                    <span className={cn(
+                      item.status === "Pending" ? "font-normal" : "font-bold"
+                    )}>
+                      {t(item.status)}
+                    </span>
+                  </Badge>
 
-                    {item.region && (
-                      <Chip
-                        label={item.region}
-                        size="small"
-                        variant="outlined"
-                        color="info"
-                      />
-                    )}
-                  </Box>
-                </Box>
+                  {item.region && (
+                    <Badge variant="secondary" className="px-2 py-0.5">
+                      {item.region}
+                    </Badge>
+                  )}
+                </div>
 
-                <Divider
-                  sx={{
-                    borderStyle: "dashed",
-                    borderColor: alpha(theme.palette.divider, 0.2),
-                    mx: 1,
-                  }}
-                />
+                <Separator className="my-1 border-dashed" />
 
-                <Box sx={{ px: 1.5, py: 0.2 }}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      display: "block",
-                      color: "text.secondary",
-                      fontSize: "0.7rem",
-                      textAlign: "right",
-                    }}
-                  >
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">
                     {item.check_time || "-- --"}
-                  </Typography>
-                </Box>
-              </Card>
-            </Grid>
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </Grid>
+        </div>
       )}
     </BasePage>
   );

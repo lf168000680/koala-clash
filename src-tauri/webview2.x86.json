@@ -25,7 +25,7 @@
       "active": true,
       "dialog": false,
       "endpoints": [
-        "https://github.com/coolcoala/clash-verge-rev-lite/releases/download/updater/update-fixed-webview2.json"
+        "https://github.com/lf168000680/koala-clash/releases/download/updater/update-fixed-webview2.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERCQjQ1QjQ0QUJDQTU1RTkKUldUcFZjcXJSRnUwMjdXSERoZVQ1R0hHRDMrT3VkSmpvbDJmb01sN3ZpYWhVYnEwaWpYUWU4YU0K"
     }

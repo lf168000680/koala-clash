@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { cn } from "@root/lib/utils";
 import { ChevronRight, Globe, Zap } from "lucide-react";
 
-import { useAppData } from "@/providers/app-data-provider";
+import { useAppStatic } from "@/providers/app-data-provider";
 import { ProxySelectorModal } from "./proxy-selector-modal";
 import delayManager from "@/services/delay";
 
@@ -35,7 +35,7 @@ function getDelayDotColor(delay: number): string {
 
 export const ProxyBadge: React.FC = () => {
   const { t } = useTranslation();
-  const { proxies, clashConfig } = useAppData();
+  const { proxies, clashConfig } = useAppStatic();
   const [modalOpen, setModalOpen] = useState(false);
   const [currentDelay, setCurrentDelay] = useState(-1);
 
