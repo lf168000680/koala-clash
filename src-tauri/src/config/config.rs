@@ -171,11 +171,11 @@ impl Config {
     pub async fn generate() -> Result<()> {
         let (config, exists_keys, logs) = enhance::enhance().await;
 
-        *Config::runtime().draft() = Box::new(IRuntime {
+        **Config::runtime().draft() = IRuntime {
             config: Some(config),
             exists_keys,
             chain_logs: logs,
-        });
+        };
 
         Ok(())
     }

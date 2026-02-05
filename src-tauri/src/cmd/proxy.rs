@@ -30,7 +30,7 @@ pub async fn get_proxies() -> CmdResult<serde_json::Value> {
         let proxies = manager.get_refresh_proxies().await?;
         {
             let mut state = cmd_proxy_state.lock().unwrap();
-            state.proxies = Box::new(proxies);
+            *state.proxies = proxies;
             state.need_refresh = false;
         }
         log::debug!(target: "app", "Proxies refreshed successfully");
@@ -56,7 +56,7 @@ pub async fn force_refresh_proxies() -> CmdResult<serde_json::Value> {
 
     {
         let mut state = cmd_proxy_state.lock().unwrap();
-        state.proxies = Box::new(proxies.clone());
+        *state.proxies = proxies.clone();
         state.need_refresh = false;
         state.last_refresh_time = Instant::now();
     }
@@ -85,7 +85,7 @@ pub async fn get_providers_proxies() -> CmdResult<serde_json::Value> {
         let providers = manager.get_providers_proxies().await?;
         {
             let mut state = cmd_proxy_state.lock().unwrap();
-            state.providers_proxies = Box::new(providers);
+            *state.providers_proxies = providers;
             state.need_refresh = false;
         }
         log::debug!(target: "app", "providers_proxies refreshed successfully");

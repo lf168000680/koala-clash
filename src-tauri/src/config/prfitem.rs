@@ -528,7 +528,6 @@ impl PrfItem {
                 proxies,
                 groups,
                 use_hwid: Some(use_hwid),
-                ..PrfOption::default()
             }),
             home,
             support_url,

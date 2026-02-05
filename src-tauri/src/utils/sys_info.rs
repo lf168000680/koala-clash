@@ -89,11 +89,9 @@ fn get_windows_edition() -> String {
         Err(_) => return "Windows".to_string(),
     };
 
-    let product_name = hklm
+    hklm
         .get_value::<String, _>("ProductName")
-        .unwrap_or_else(|_| "Windows".to_string());
-
-    product_name
+        .unwrap_or_else(|_| "Windows".to_string())
 }
 
 #[cfg(target_os = "macos")]
