@@ -48,10 +48,26 @@ impl MihomoManager {
                 }
             }
             Method::PUT => json!(client_response.text().await.map_err(|e| e.to_string())?),
-            _ => client_response
-                .json::<serde_json::Value>()
-                .await
-                .map_err(|e| e.to_string())?,
+            _ => {
+                let status = client_response.status();
+                if status.as_u16() == 204 {
+                    json!({"code": 204})
+                } else {
+                    let body = client_response
+                        .json::<serde_json::Value>()
+                        .await
+                        .map_err(|e| e.to_string())?;
+
+                    if !status.is_success() {
+                        let msg = body
+                            .get("message")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Request failed");
+                        return Err(msg.to_string());
+                    }
+                    body
+                }
+            }
         };
         Ok(response)
     }
