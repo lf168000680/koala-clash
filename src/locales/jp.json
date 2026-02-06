@@ -561,5 +561,6 @@
   "Copy to clipboard": "クリックしてコピー",
   "Port Config": "ポート設定",
   "Configuration saved successfully": "ランダム設定を保存完了",
-  "Enable one-click random API port and key. Click to randomize the port and key": "ワンクリックでランダム API ポートとキーを有効化。ポートとキーをランダム化するにはクリックしてください"
+  "Enable one-click random API port and key. Click to randomize the port and key": "ワンクリックでランダム API ポートとキーを有効化。ポートとキーをランダム化するにはクリックしてください",
+  "Clash Control Address Missing": "Clash の制御アドレスが見つかりません。設定で先に構成してください"
 }

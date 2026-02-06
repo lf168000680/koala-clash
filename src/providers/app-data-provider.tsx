@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useVerge } from "@/hooks/use-verge";
 import useSWR from "swr";
 import useSWRSubscription from "swr/subscription";
@@ -70,6 +76,7 @@ export const AppDataProvider = ({
   const pageVisible = useVisibility();
   const { clashInfo } = useClashInfo();
   const { verge } = useVerge();
+  const lastRefreshAllRef = useRef(0);
 
   // 基础数据 - 中频率更新 (5秒)
   const { data: proxiesData, mutate: refreshProxy } = useSWR(
@@ -533,6 +540,11 @@ export const AppDataProvider = ({
 
   // 提供统一的刷新方法
   const refreshAll = async () => {
+    const now = Date.now();
+    if (now - lastRefreshAllRef.current < 800) {
+      return Promise.resolve();
+    }
+    lastRefreshAllRef.current = now;
     await Promise.all([
       refreshProxy(),
       refreshClashConfig(),

@@ -456,5 +456,6 @@
   "TUN requires Service Mode": "يتطلب وضع TUN خدمة",
   "Install Service": "تثبيت الخدمة ",
   "Installing Service...": "جاري تثبيت الخدمة...",
-  "Service Administrator Prompt": "يتطلب Clash Verge امتيازات المسؤول لإعادة تثبيت خدمة النظام"
+  "Service Administrator Prompt": "يتطلب Clash Verge امتيازات المسؤول لإعادة تثبيت خدمة النظام",
+  "Clash Control Address Missing": "لم يتم اكتشاف عنوان تحكم Clash، يرجى تهيئته أولاً في الإعدادات"
 }

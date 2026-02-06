@@ -68,12 +68,11 @@
       "assetProtocol": {
         "scope": [
           "$APPDATA/**",
-          "$RESOURCE/../**",
-          "**"
+          "$RESOURCE/**"
         ],
         "enable": true
       },
-      "csp": null
+      "csp": "default-src 'self' tauri: asset:; img-src 'self' asset: data: blob:; media-src 'self' asset: data: blob:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:* https://* wss://*;"
     }
   }
 }

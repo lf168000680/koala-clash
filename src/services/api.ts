@@ -2,6 +2,8 @@ import axios, { AxiosInstance } from "axios";
 import { getClashInfo } from "./cmds";
 import { invoke } from "@tauri-apps/api/core";
 
+const isDev = import.meta.env.DEV;
+
 let instancePromise: Promise<AxiosInstance> = null!;
 
 async function getInstancePromise() {
@@ -19,7 +21,11 @@ async function getInstancePromise() {
       else if (/^\d+$/.test(server)) server = `127.0.0.1:${server}`;
     }
     if (info?.secret) secret = info?.secret;
-  } catch {}
+  } catch { }
+
+  if (!server) {
+    throw new Error("Clash server is not configured");
+  }
 
   const axiosIns = axios.create({
     baseURL: `http://${server}`,
@@ -79,6 +85,7 @@ export const getProxyDelay = async (
   name: string,
   url?: string,
   timeout?: number,
+  signal?: AbortSignal,
 ) => {
   const params = {
     timeout: timeout || 10000,
@@ -87,7 +94,7 @@ export const getProxyDelay = async (
   const instance = await getAxios();
   const result = await instance.get(
     `/proxies/${encodeURIComponent(name)}/delay`,
-    { params },
+    { params, signal },
   );
   return result as any as { delay: number };
 };
@@ -272,31 +279,38 @@ export const getGroupProxyDelays = async (
   groupName: string,
   url?: string,
   timeout?: number,
+  signal?: AbortSignal,
 ) => {
   const params = {
     timeout: timeout || 10000,
     url: url || "https://cp.cloudflare.com/generate_204",
   };
 
-  console.log(
-    `[API] Get proxy group delay, group: ${groupName}, URL: ${params.url}, timeout: ${params.timeout}ms`,
-  );
+  if (isDev) {
+    console.log(
+      `[API] Get proxy group delay, group: ${groupName}, URL: ${params.url}, timeout: ${params.timeout}ms`,
+    );
+  }
 
   try {
     const instance = await getAxios();
-    console.log(
-      `[API] Send HTTP request: GET /group/${encodeURIComponent(groupName)}/delay`,
-    );
+    if (isDev) {
+      console.log(
+        `[API] Send HTTP request: GET /group/${encodeURIComponent(groupName)}/delay`,
+      );
+    }
 
     const result = await instance.get(
       `/group/${encodeURIComponent(groupName)}/delay`,
-      { params },
+      { params, signal },
     );
 
-    console.log(
-      `[API] Get proxy group delay success, group: ${groupName}, result count:`,
-      Object.keys(result || {}).length,
-    );
+    if (isDev) {
+      console.log(
+        `[API] Get proxy group delay success, group: ${groupName}, result count:`,
+        Object.keys(result || {}).length,
+      );
+    }
     return result as any as Record<string, number>;
   } catch (error) {
     console.error(

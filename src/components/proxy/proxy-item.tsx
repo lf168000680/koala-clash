@@ -42,6 +42,7 @@ export const ProxyItem = memo((props: Props) => {
     delayManager.setListener(proxy.name, group.name, setDelay);
     return () => {
       delayManager.removeListener(proxy.name, group.name);
+      delayManager.cancelDelay(proxy.name, group.name);
     };
   }, [proxy.name, group.name, isPreset]);
 

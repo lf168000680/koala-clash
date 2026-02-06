@@ -605,5 +605,6 @@
   "Originals Only": "Yalnızca Orijinaller",
   "No (IP Banned By Disney+)": "Hayır (IP Disney+ Tarafından Yasaklandı)",
   "Unsupported Country/Region": "Desteklenmeyen Ülke/Bölge",
-  "Failed (Network Connection)": "Başarısız (Ağ Bağlantısı)"
+  "Failed (Network Connection)": "Başarısız (Ağ Bağlantısı)",
+  "Clash Control Address Missing": "Clash kontrol adresi algılanamadı, lütfen önce Ayarlar'da yapılandırın"
 }

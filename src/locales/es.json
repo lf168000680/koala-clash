@@ -558,5 +558,6 @@
   "Copy to clipboard": "Haz clic aquí para copiar",
   "Port Config": "Configuración de puerto",
   "Configuration saved successfully": "Configuración aleatoria guardada correctamente",
-  "Enable one-click random API port and key. Click to randomize the port and key": "Habilitar la generación de puerto y clave API aleatorios con un solo clic. Haz clic para randomizar el puerto y la clave"
+  "Enable one-click random API port and key. Click to randomize the port and key": "Habilitar la generación de puerto y clave API aleatorios con un solo clic. Haz clic para randomizar el puerto y la clave",
+  "Clash Control Address Missing": "No se detectó la dirección de control de Clash. Configúrala en Ajustes primero"
 }

@@ -3,12 +3,13 @@ import React, { useEffect } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { closeAllConnections, getClashConfig } from "@/services/api";
+import { closeAllConnections, getClashConfig, getAxios } from "@/services/api";
 import { patchClashMode } from "@/services/cmds";
 import { useVerge } from "@/hooks/use-verge";
 import { ProxyGroups } from "@/components/proxy/proxy-groups";
 import { ProviderButton } from "@/components/proxy/provider-button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { showNotice } from "@/services/noticeService";
 
 const ProxyPage = () => {
   const { t } = useTranslation();
@@ -25,6 +26,12 @@ const ProxyPage = () => {
   const { verge } = useVerge();
   const modeList = ["rule", "global"];
   const curMode = clashConfig?.mode?.toLowerCase();
+
+  useEffect(() => {
+    getAxios().catch((error) => {
+      showNotice("error", t("Clash Control Address Missing"));
+    });
+  }, [t]);
 
   const onChangeMode = useLockFn(async (mode: string) => {
     if (mode !== curMode && verge?.auto_close_connection) {

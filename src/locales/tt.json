@@ -452,5 +452,6 @@
   "TUN requires Service Mode": "TUN режимы хезмәт күрсәтүне таләп итә",
   "Install Service": "Хезмәтне урнаштыру",
   "Installing Service...": "Хезмәт урнаштырыла...",
-  "Service Administrator Prompt": "Clash Verge система хезмәтен яңадан урнаштыру өчен администратор хокукларын таләп итә"
+  "Service Administrator Prompt": "Clash Verge система хезмәтен яңадан урнаштыру өчен администратор хокукларын таләп итә",
+  "Clash Control Address Missing": "Clash контроль адресы табылмады, зинһар, башта көйләүләрдә көйләргә"
 }

@@ -452,5 +452,6 @@
   "TUN requires Service Mode": "Mode TUN memerlukan layanan",
   "Install Service": "Instal Layanan",
   "Installing Service...": "Memasang Layanan...",
-  "Service Administrator Prompt": "Clash Verge memerlukan hak administrator untuk menginstal ulang layanan sistem"
+  "Service Administrator Prompt": "Clash Verge memerlukan hak administrator untuk menginstal ulang layanan sistem",
+  "Clash Control Address Missing": "Alamat kontrol Clash tidak terdeteksi, silakan konfigurasi di Pengaturan terlebih dahulu"
 }

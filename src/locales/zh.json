@@ -598,6 +598,7 @@
   "System Proxy Tray Icon": "系统代理托盘图标",
   "System Setting": "系统设置",
   "System and Mixed Can Only be Used in Service Mode": "System 和 Mixed 只能在服务模式下使用",
+  "Clash Control Address Missing": "未检测到 Clash 控制地址，请先在设置中配置",
   "System-level virtual network adapter": "系统级虚拟网络适配器",
   "SystemProxyToggledBody": "已通过快捷键切换系统代理状态",
   "SystemProxyToggledTitle": "系统代理切换",

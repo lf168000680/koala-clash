@@ -179,27 +179,11 @@ export const ProxySelectors: React.FC = () => {
 
       const timeout = verge?.default_latency_timeout || 5000;
 
-      if (isGlobalMode) {
-        const proxyList = proxies?.global?.all;
-        if (proxyList) {
-          const proxyNames = proxyList
-            .map((p: any) => (typeof p === "string" ? p : p.name))
-            .filter((name: string) => name && !presetList.includes(name));
-          delayManager.checkListDelay(proxyNames, "GLOBAL", timeout);
-        }
-      } else {
-        const group = proxies?.groups?.find(
-          (g: IProxyGroup) => g.name === selectedGroup,
-        );
-        if (group && group.all) {
-          const proxyNames = group.all
-            .map((p: any) => (typeof p === "string" ? p : p.name))
-            .filter(Boolean);
-          delayManager.checkListDelay(proxyNames, selectedGroup, timeout);
-        }
-      }
+      const groupName = isGlobalMode ? "GLOBAL" : selectedGroup;
+      if (!selectedProxy || presetList.includes(selectedProxy)) return;
+      delayManager.checkDelay(selectedProxy, groupName, timeout);
     },
-    [selectedGroup, proxies, isGlobalMode, isDirectMode, verge],
+    [selectedGroup, selectedProxy, isGlobalMode, isDirectMode, verge],
   );
 
   const handleGroupChange = (newGroup: string) => {
@@ -214,6 +198,10 @@ export const ProxySelectors: React.FC = () => {
     setSelectedProxy(newProxy);
     try {
       await updateProxy(selectedGroup, newProxy);
+      if (!presetList.includes(newProxy)) {
+        const timeout = verge?.default_latency_timeout || 5000;
+        delayManager.checkDelay(newProxy, selectedGroup, timeout);
+      }
       if (verge?.auto_close_connection && previousProxy) {
         const connectionsData = await getConnections();
         connectionsData?.connections?.forEach((conn: any) => {

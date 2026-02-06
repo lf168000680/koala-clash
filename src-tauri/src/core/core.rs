@@ -470,7 +470,7 @@ impl CoreManager {
                 logging!(info, Type::Config, true, "Generating runtime configuration");
                 let run_path = Config::generate_file(ConfigType::Run)?;
                 logging_error!(Type::Config, true, self.put_configs_force(run_path).await);
-                Ok((true, "something".into()))
+                Ok((true, String::new()))
             }
             Ok((false, error_msg)) => {
                 logging!(

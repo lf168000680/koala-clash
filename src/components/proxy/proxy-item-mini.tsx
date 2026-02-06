@@ -39,7 +39,10 @@ export const ProxyItemMini = (props: Props) => {
   useEffect(() => {
     if (isPreset) return;
     delayManager.setListener(proxy.name, group.name, setDelay);
-    return () => delayManager.removeListener(proxy.name, group.name);
+    return () => {
+      delayManager.removeListener(proxy.name, group.name);
+      delayManager.cancelDelay(proxy.name, group.name);
+    };
   }, [proxy.name, group.name, isPreset]);
 
   useEffect(() => {

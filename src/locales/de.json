@@ -558,5 +558,6 @@
   "Copy to clipboard": "Klicken Sie hier, um zu kopieren",
   "Port Config": "Port-Konfiguration",
   "Configuration saved successfully": "Zufalls-Konfiguration erfolgreich gespeichert",
-  "Enable one-click random API port and key. Click to randomize the port and key": "Einstellsichere Zufalls-API-Port- und Schlüsselgenerierung aktivieren. Klicken Sie, um Port und Schlüssel zu randomisieren"
+  "Enable one-click random API port and key. Click to randomize the port and key": "Einstellsichere Zufalls-API-Port- und Schlüsselgenerierung aktivieren. Klicken Sie, um Port und Schlüssel zu randomisieren",
+  "Clash Control Address Missing": "Clash-Steueradresse wurde nicht erkannt. Bitte zuerst in den Einstellungen konfigurieren"
 }

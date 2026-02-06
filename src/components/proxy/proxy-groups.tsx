@@ -153,10 +153,14 @@ export const ProxyGroups = memo((props: Props) => {
     const url = delayManager.getUrl(groupName);
 
     try {
+      const controller = new AbortController();
       await Promise.race([
         delayManager.checkListDelay(names, groupName, timeout),
-        getGroupProxyDelays(groupName, url, timeout),
-      ]);
+        getGroupProxyDelays(groupName, url, timeout, controller.signal),
+      ]).finally(() => {
+        controller.abort();
+        delayManager.cancelGroup(groupName);
+      });
     } catch (error) {
       console.error(
         `[ProxyGroups] Latency test error, group: ${groupName}`,

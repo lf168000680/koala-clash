@@ -196,7 +196,12 @@ const Layout = () => {
   useEffect(() => {
     const listeners = [
       addListener("verge://refresh-clash-config", async () => {
-        await getAxios(true);
+        try {
+          await getAxios(true);
+        } catch (error) {
+          showNotice("error", t("Clash Control Address Missing"));
+          return;
+        }
         mutate("getProxies");
         mutate("getVersion");
         mutate("getClashConfig");
@@ -279,6 +284,7 @@ const Layout = () => {
     initRef.current = true;
 
     let isInitialized = false;
+    let isInitializing = false;
     let initializationAttempts = 0;
     const maxAttempts = 3;
 
@@ -312,10 +318,12 @@ const Layout = () => {
     };
 
     const performInitialization = async () => {
-      if (isInitialized) {
-        console.log("[Layout] Already initialized, skip");
+      if (isInitialized || isInitializing) {
+        console.log("[Layout] Already initializing or initialized, skip");
         return;
       }
+
+      isInitializing = true;
 
       initializationAttempts++;
       console.log(
@@ -328,11 +336,23 @@ const Layout = () => {
         await notifyBackend("Loading phase", "Loading");
 
         await new Promise<void>((resolve) => {
+          let resolved = false;
+          let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+          const finish = () => {
+            if (resolved) return;
+            resolved = true;
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+            resolve();
+          };
+
           const checkReactMount = () => {
             const rootElement = document.getElementById("root");
             if (rootElement && rootElement.children.length > 0) {
               console.log("[Layout] React components are mounted");
-              resolve();
+              finish();
             } else {
               setTimeout(checkReactMount, 50);
             }
@@ -340,11 +360,11 @@ const Layout = () => {
 
           checkReactMount();
 
-          setTimeout(() => {
+          timeoutId = setTimeout(() => {
             console.log(
               "[Layout] React components mount check timeout, continue execution",
             );
-            resolve();
+            finish();
           }, 2000);
         });
 
@@ -386,6 +406,8 @@ const Layout = () => {
             console.error("[Layout] Emergency initialization also failed:", e);
           }
         }
+      } finally {
+        isInitializing = false;
       }
     };
 
@@ -409,7 +431,7 @@ const Layout = () => {
           "[Layout] Failed to listen for startup completion event:",
           err,
         );
-        return () => {};
+        return () => { };
       }
     };
 
@@ -448,7 +470,7 @@ const Layout = () => {
           "[Layout] Emergency initialization trigger: initialization not completed within 5 seconds",
         );
         removeLoadingOverlay();
-        notifyBackend("UI ready").catch(() => {});
+        notifyBackend("UI ready").catch(() => { });
         isInitialized = true;
       }
     }, 5000);

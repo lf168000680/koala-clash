@@ -704,5 +704,6 @@
   "Failed to toggle proxy": "Не удалось переключить прокси",
   "Add a profile to start using the VPN": "Добавьте профиль, чтобы начать использовать VPN",
   "TUN mode requires the system service to be installed": "Режим TUN требует установки системной службы",
-  "Toggle Proxy": "Переключить прокси"
+  "Toggle Proxy": "Переключить прокси",
+  "Clash Control Address Missing": "Адрес управления Clash не обнаружен, пожалуйста, настройте его в настройках"
 }

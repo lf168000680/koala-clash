@@ -573,6 +573,7 @@
   "Silent Start Info": "Start the program in background mode without displaying the panel",
   "Socks Port": "Socks Port",
   "Something went wrong": "Something went wrong",
+  "Clash Control Address Missing": "Clash control address not detected. Please configure it in Settings.",
   "Sort by": "Sort by",
   "Sort by default": "Sort by default",
   "Sort by delay": "Sort by delay",

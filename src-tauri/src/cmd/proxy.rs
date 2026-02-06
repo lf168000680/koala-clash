@@ -19,11 +19,11 @@ pub async fn get_proxies() -> CmdResult<serde_json::Value> {
     let should_refresh = {
         let mut state = cmd_proxy_state.lock().unwrap();
         let now = Instant::now();
-        if now.duration_since(state.last_refresh_time) > PROXIES_REFRESH_INTERVAL {
-            state.need_refresh = true;
-            state.last_refresh_time = now;
+        if now.duration_since(state.last_refresh_time_proxies) > PROXIES_REFRESH_INTERVAL {
+            state.need_refresh_proxies = true;
+            state.last_refresh_time_proxies = now;
         }
-        state.need_refresh
+        state.need_refresh_proxies
     };
 
     if should_refresh {
@@ -31,7 +31,7 @@ pub async fn get_proxies() -> CmdResult<serde_json::Value> {
         {
             let mut state = cmd_proxy_state.lock().unwrap();
             *state.proxies = proxies;
-            state.need_refresh = false;
+            state.need_refresh_proxies = false;
         }
         log::debug!(target: "app", "Proxies refreshed successfully");
     }
@@ -57,8 +57,8 @@ pub async fn force_refresh_proxies() -> CmdResult<serde_json::Value> {
     {
         let mut state = cmd_proxy_state.lock().unwrap();
         *state.proxies = proxies.clone();
-        state.need_refresh = false;
-        state.last_refresh_time = Instant::now();
+        state.need_refresh_proxies = false;
+        state.last_refresh_time_proxies = Instant::now();
     }
 
     log::debug!(target: "app", "Force refresh proxy cache completed");
@@ -73,11 +73,11 @@ pub async fn get_providers_proxies() -> CmdResult<serde_json::Value> {
     let should_refresh = {
         let mut state = cmd_proxy_state.lock().unwrap();
         let now = Instant::now();
-        if now.duration_since(state.last_refresh_time) > PROVIDERS_REFRESH_INTERVAL {
-            state.need_refresh = true;
-            state.last_refresh_time = now;
+        if now.duration_since(state.last_refresh_time_providers) > PROVIDERS_REFRESH_INTERVAL {
+            state.need_refresh_providers = true;
+            state.last_refresh_time_providers = now;
         }
-        state.need_refresh
+        state.need_refresh_providers
     };
 
     if should_refresh {
@@ -86,7 +86,7 @@ pub async fn get_providers_proxies() -> CmdResult<serde_json::Value> {
         {
             let mut state = cmd_proxy_state.lock().unwrap();
             *state.providers_proxies = providers;
-            state.need_refresh = false;
+            state.need_refresh_providers = false;
         }
         log::debug!(target: "app", "providers_proxies refreshed successfully");
     }

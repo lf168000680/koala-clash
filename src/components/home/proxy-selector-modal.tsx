@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@root/lib/utils";
@@ -302,7 +302,7 @@ export const ProxySelectorModal: React.FC<ProxySelectorModalProps> = ({
   const isDirectMode = mode === "direct";
   const enableGroupIcon = verge?.enable_group_icon ?? true;
 
-  const hasOpenedRef = React.useRef(false);
+  const lastExpandedRef = useRef<string | null>(null);
 
   const selectorGroups = useMemo(() => {
     if (!proxies?.groups) return [];
@@ -319,24 +319,34 @@ export const ProxySelectorModal: React.FC<ProxySelectorModalProps> = ({
   }, [open, selectorGroups, expandedGroup]);
 
   useEffect(() => {
-    if (open) {
-      if (!hasOpenedRef.current && !isDirectMode && selectorGroups.length > 0) {
-        hasOpenedRef.current = true;
-        const timeout = verge?.default_latency_timeout || 5000;
-
-        selectorGroups.forEach((group: IProxyGroup) => {
-          if (group?.all) {
-            const proxyNames = group.all
-              .map((p: any) => (typeof p === "string" ? p : p.name))
-              .filter((name: string) => name && !presetList.includes(name));
-            delayManager.checkListDelay(proxyNames, group.name, timeout);
-          }
-        });
-      }
-    } else {
-      hasOpenedRef.current = false;
+    if (!open) {
+      selectorGroups.forEach((group: IProxyGroup) => {
+        delayManager.cancelGroup(group.name);
+      });
+      lastExpandedRef.current = null;
+      return;
     }
-  }, [open, isDirectMode, selectorGroups, verge]);
+
+    if (isDirectMode || !expandedGroup) {
+      return;
+    }
+
+    if (lastExpandedRef.current && lastExpandedRef.current !== expandedGroup) {
+      delayManager.cancelGroup(lastExpandedRef.current);
+    }
+
+    lastExpandedRef.current = expandedGroup;
+    const timeout = verge?.default_latency_timeout || 5000;
+    const group = selectorGroups.find(
+      (item: IProxyGroup) => item.name === expandedGroup,
+    );
+    if (group?.all) {
+      const proxyNames = group.all
+        .map((p: any) => (typeof p === "string" ? p : p.name))
+        .filter((name: string) => name && !presetList.includes(name));
+      delayManager.checkListDelay(proxyNames, group.name, timeout);
+    }
+  }, [open, isDirectMode, expandedGroup, selectorGroups, verge]);
 
   useEffect(() => {
     if (!open) {
@@ -385,19 +395,21 @@ export const ProxySelectorModal: React.FC<ProxySelectorModalProps> = ({
     if (isTestingAll || !expandedGroup) return;
     setIsTestingAll(true);
 
-    const timeout = verge?.default_latency_timeout || 5000;
-    const group = proxies?.groups?.find(
-      (g: IProxyGroup) => g.name === expandedGroup,
-    );
+    try {
+      const timeout = verge?.default_latency_timeout || 5000;
+      const group = proxies?.groups?.find(
+        (g: IProxyGroup) => g.name === expandedGroup,
+      );
 
-    if (group?.all) {
-      const proxyNames = group.all
-        .map((p: any) => (typeof p === "string" ? p : p.name))
-        .filter((name: string) => name && !presetList.includes(name));
-      await delayManager.checkListDelay(proxyNames, expandedGroup, timeout);
+      if (group?.all) {
+        const proxyNames = group.all
+          .map((p: any) => (typeof p === "string" ? p : p.name))
+          .filter((name: string) => name && !presetList.includes(name));
+        await delayManager.checkListDelay(proxyNames, expandedGroup, timeout);
+      }
+    } finally {
+      setIsTestingAll(false);
     }
-
-    setIsTestingAll(false);
   }, [isTestingAll, expandedGroup, verge, proxies]);
 
   const handleSortChange = useCallback(() => {
