@@ -248,6 +248,7 @@ class DelayManager {
     const names = nameList.filter(Boolean);
     // 设置正在延迟测试中
     names.forEach((name) => this.setDelay(name, group, STATUS_TESTING));
+    if (!names.length) return;
 
     let index = 0;
     const startTime = Date.now();
@@ -289,7 +290,19 @@ class DelayManager {
     };
 
     // 限制并发数，避免发送太多请求
-    const actualConcurrency = Math.min(concurrency, names.length, 10);
+    const baseConcurrency = Math.min(concurrency, names.length);
+    const adaptiveLimit =
+      names.length >= 60
+        ? 10
+        : names.length >= 30
+          ? 8
+          : names.length >= 15
+            ? 6
+            : 4;
+    const actualConcurrency = Math.max(
+      1,
+      Math.min(baseConcurrency, adaptiveLimit),
+    );
     if (isDev) {
       console.log(`[DelayManager] 实际并发数: ${actualConcurrency}`);
     }

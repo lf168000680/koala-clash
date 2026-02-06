@@ -7,12 +7,37 @@ export const createSockette = (
   url: string,
   opt: SocketteOptions,
   maxError = 10,
+  secret?: string,
 ) => {
+  let wsUrl = url;
+  if (!wsUrl.startsWith("ws://") && !wsUrl.startsWith("wss://")) {
+    wsUrl = `ws://${wsUrl}`;
+  }
+
+  if (secret) {
+    try {
+      const urlObj = new URL(wsUrl);
+      urlObj.searchParams.delete("token");
+      urlObj.searchParams.append("token", secret);
+      wsUrl = urlObj.toString();
+      console.log(`[WebSocket] 创建连接: ${wsUrl.replace(secret || "", "***")}`);
+    } catch (e) {
+      console.error(`[WebSocket] URL格式错误: ${wsUrl}`, e);
+      if (opt.onerror) {
+        const anyOpt = opt as any;
+        anyOpt.onerror(
+          new ErrorEvent("error", { message: `URL格式错误: ${e}` } as any),
+        );
+      }
+      return createDummySocket();
+    }
+  }
+
   let remainRetryCount = maxError;
   let hasMaxed = false;
   let hasClosedNotified = false;
 
-  return new Sockette(url, {
+  return new Sockette(wsUrl, {
     ...opt,
     // Sockette has a built-in reconnect when ECONNREFUSED feature
     // Use maxError if opt.maxAttempts is not specified
@@ -61,77 +86,6 @@ export const createSockette = (
       opt.onclose?.call(this, ev);
     },
   });
-};
-
-/**
- * 创建一个支持认证的WebSocket连接
- * 使用标准的URL参数方式添加token
- *
- * 注意：mihomo服务器对WebSocket的认证支持不佳，使用URL参数方式传递token
- */
-export const createAuthSockette = (
-  baseUrl: string,
-  secret: string,
-  opt: SocketteOptions,
-  maxError = 10,
-) => {
-  let url = baseUrl;
-  if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
-    url = `ws://${url}`;
-  }
-
-  let hasMaxed = false;
-  let hasClosedNotified = false;
-
-  try {
-    const urlObj = new URL(url);
-    if (secret) {
-      urlObj.searchParams.delete("token");
-      urlObj.searchParams.append("token", secret);
-    }
-
-    url = urlObj.toString();
-    console.log(`[WebSocket] 创建连接: ${url.replace(secret || "", "***")}`);
-  } catch (e) {
-    console.error(`[WebSocket] URL格式错误: ${url}`, e);
-    if (opt.onerror) {
-      const anyOpt = opt as any;
-      anyOpt.onerror(
-        new ErrorEvent("error", { message: `URL格式错误: ${e}` } as any),
-      );
-    }
-    return createDummySocket();
-  }
-
-  const wrappedOptions: SocketteOptions = {
-    ...opt,
-    onopen(this: Sockette, ev) {
-      hasMaxed = false;
-      hasClosedNotified = false;
-      opt.onopen?.call(this, ev);
-    },
-    onclose(this: Sockette, ev) {
-      const isNormal = ev.code === 1000 || ev.code === 1001;
-      if (!isNormal && !hasMaxed) {
-        return;
-      }
-      if (hasClosedNotified) {
-        return;
-      }
-      hasClosedNotified = true;
-      opt.onclose?.call(this, ev);
-    },
-    onmaximum(this: Sockette, ev) {
-      hasMaxed = true;
-      opt.onmaximum?.call(this, ev);
-      if (!hasClosedNotified && opt.onclose) {
-        hasClosedNotified = true;
-        opt.onclose.call(this, ev as any);
-      }
-    },
-  };
-
-  return createSockette(url, wrappedOptions, maxError);
 };
 
 // 创建一个空的WebSocket对象

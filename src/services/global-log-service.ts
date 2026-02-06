@@ -1,6 +1,6 @@
 // 全局日志服务，使应用在任何页面都能收集日志
 import { create } from "zustand";
-import { createAuthSockette } from "@/utils/websocket";
+import { createSockette } from "@/utils/websocket";
 import dayjs from "dayjs";
 
 // 最大日志数量
@@ -92,7 +92,9 @@ export const initGlobalLogService = (
     return;
   }
 
-  globalLogSocket = createAuthSockette(wsUrl, secret, {
+  globalLogSocket = createSockette(
+    wsUrl,
+    {
     timeout: 8000, // 8秒超时
     onmessage(event) {
       try {
@@ -128,7 +130,10 @@ export const initGlobalLogService = (
       console.log("[GlobalLog] WebSocket connection established", event);
       useGlobalLogStore.setState({ isConnected: true });
     },
-  });
+    },
+    10,
+    secret,
+  );
 };
 
 // 关闭全局日志连接

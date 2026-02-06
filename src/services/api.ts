@@ -40,7 +40,10 @@ async function getInstancePromise() {
 /// enable force update axiosIns
 export const getAxios = async (force: boolean = false) => {
   if (!instancePromise || force) {
-    instancePromise = getInstancePromise();
+    instancePromise = getInstancePromise().catch((error) => {
+      instancePromise = null!;
+      throw error;
+    });
   }
   return instancePromise;
 };

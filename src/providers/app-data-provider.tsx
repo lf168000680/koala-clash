@@ -22,7 +22,7 @@ import {
   forceRefreshProxies,
 } from "@/services/cmds";
 import { useClashInfo } from "@/hooks/use-clash";
-import { createAuthSockette } from "@/utils/websocket";
+import { createSockette } from "@/utils/websocket";
 import { useVisibility } from "@/hooks/use-visibility";
 import { listen } from "@tauri-apps/api/event";
 
@@ -313,7 +313,7 @@ export const AppDataProvider = ({
       console.log(
         `[Connections][${AppDataProvider.name}] Connecting: ${server}/connections`,
       );
-      const socket = createAuthSockette(`${server}/connections`, secret, {
+      const socket = createSockette(`${server}/connections`, {
         timeout: 5000,
         onmessage(event) {
           try {
@@ -386,7 +386,7 @@ export const AppDataProvider = ({
             next(null, { connections: [], uploadTotal: 0, downloadTotal: 0 });
           }
         },
-      });
+      }, 10, secret);
 
       return () => {
         console.log(
@@ -409,7 +409,7 @@ export const AppDataProvider = ({
       console.log(
         `[Traffic][${AppDataProvider.name}] Connecting: ${server}/traffic`,
       );
-      const socket = createAuthSockette(`${server}/traffic`, secret, {
+      const socket = createSockette(`${server}/traffic`, {
         onmessage(event) {
           try {
             const data = JSON.parse(event.data);
@@ -459,7 +459,7 @@ export const AppDataProvider = ({
             next(null, { up: 0, down: 0 });
           }
         },
-      });
+      }, 10, secret);
 
       return () => {
         console.log(
@@ -481,7 +481,7 @@ export const AppDataProvider = ({
       console.log(
         `[Memory][${AppDataProvider.name}] Connecting: ${server}/memory`,
       );
-      const socket = createAuthSockette(`${server}/memory`, secret, {
+      const socket = createSockette(`${server}/memory`, {
         onmessage(event) {
           try {
             const data = JSON.parse(event.data);
@@ -527,7 +527,7 @@ export const AppDataProvider = ({
             next(null, { inuse: 0 });
           }
         },
-      });
+      }, 10, secret);
 
       return () => {
         console.log(

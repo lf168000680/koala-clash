@@ -16,7 +16,7 @@ import {
 import { useVisibility } from "@/hooks/use-visibility";
 import { useClashInfo } from "@/hooks/use-clash";
 import { useVerge } from "@/hooks/use-verge";
-import { createAuthSockette } from "@/utils/websocket";
+import { createSockette } from "@/utils/websocket";
 import parseTraffic from "@/utils/parse-traffic";
 import { isDebugEnabled, gc } from "@/services/api";
 import { ReactNode } from "react";
@@ -167,8 +167,8 @@ export const EnhancedTrafficStats = () => {
 
   // WebSocket引用
   const socketRefs = useRef<{
-    traffic: ReturnType<typeof createAuthSockette> | null;
-    memory: ReturnType<typeof createAuthSockette> | null;
+    traffic: ReturnType<typeof createSockette> | null;
+    memory: ReturnType<typeof createSockette> | null;
   }>({
     traffic: null,
     memory: null,
@@ -264,9 +264,8 @@ export const EnhancedTrafficStats = () => {
     console.log(
       `[Traffic][${EnhancedTrafficStats.name}] 正在连接: ${server}/traffic`,
     );
-    socketRefs.current.traffic = createAuthSockette(
+    socketRefs.current.traffic = createSockette(
       `${server}/traffic`,
-      secret,
       {
         onmessage: handleTrafficUpdate,
         onopen: (event) => {
@@ -296,46 +295,53 @@ export const EnhancedTrafficStats = () => {
           }
         },
       },
+      10,
+      secret,
     );
 
     console.log(
       `[Memory][${EnhancedTrafficStats.name}] 正在连接: ${server}/memory`,
     );
-    socketRefs.current.memory = createAuthSockette(`${server}/memory`, secret, {
-      onmessage: handleMemoryUpdate,
-      onopen: (event) => {
-        console.log(
-          `[Memory][${EnhancedTrafficStats.name}] WebSocket 连接已建立`,
-          event,
-        );
-      },
-      onerror: (event) => {
-        console.error(
-          `[Memory][${EnhancedTrafficStats.name}] WebSocket 连接错误或达到最大重试次数`,
-          event,
-        );
-        setStats((prev) => ({
-          ...prev,
-          memory: { inuse: 0, oslimit: undefined },
-        }));
-      },
-      onclose: (event) => {
-        console.log(
-          `[Memory][${EnhancedTrafficStats.name}] WebSocket 连接关闭`,
-          event.code,
-          event.reason,
-        );
-        if (event.code !== 1000 && event.code !== 1001) {
-          console.warn(
-            `[Memory][${EnhancedTrafficStats.name}] 连接非正常关闭，重置状态`,
+    socketRefs.current.memory = createSockette(
+      `${server}/memory`,
+      {
+        onmessage: handleMemoryUpdate,
+        onopen: (event) => {
+          console.log(
+            `[Memory][${EnhancedTrafficStats.name}] WebSocket 连接已建立`,
+            event,
+          );
+        },
+        onerror: (event) => {
+          console.error(
+            `[Memory][${EnhancedTrafficStats.name}] WebSocket 连接错误或达到最大重试次数`,
+            event,
           );
           setStats((prev) => ({
             ...prev,
             memory: { inuse: 0, oslimit: undefined },
           }));
-        }
+        },
+        onclose: (event) => {
+          console.log(
+            `[Memory][${EnhancedTrafficStats.name}] WebSocket 连接关闭`,
+            event.code,
+            event.reason,
+          );
+          if (event.code !== 1000 && event.code !== 1001) {
+            console.warn(
+              `[Memory][${EnhancedTrafficStats.name}] 连接非正常关闭，重置状态`,
+            );
+            setStats((prev) => ({
+              ...prev,
+              memory: { inuse: 0, oslimit: undefined },
+            }));
+          }
+        },
       },
-    });
+      10,
+      secret,
+    );
 
     return cleanupSockets;
   }, [clashInfo, pageVisible, handleTrafficUpdate, handleMemoryUpdate]);

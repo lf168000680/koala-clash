@@ -6,7 +6,7 @@ import { TrafficGraph, type TrafficRef } from "./traffic-graph";
 import { useVisibility } from "@/hooks/use-visibility";
 import parseTraffic from "@/utils/parse-traffic";
 import useSWRSubscription from "swr/subscription";
-import { createAuthSockette } from "@/utils/websocket";
+import { createSockette } from "@/utils/websocket";
 import { useTranslation } from "react-i18next";
 import { isDebugEnabled, gc } from "@/services/api";
 import { cn } from "@root/lib/utils";
@@ -51,7 +51,7 @@ export const LayoutTraffic = () => {
 
       console.log(`[Traffic] 正在连接: ${server}/traffic`);
 
-      const s = createAuthSockette(`${server}/traffic`, secret, {
+      const s = createSockette(`${server}/traffic`, {
         timeout: 8000, // 8秒超时
         onmessage(event) {
           const data = JSON.parse(event.data) as ITrafficItem;
@@ -69,7 +69,7 @@ export const LayoutTraffic = () => {
         onopen(event) {
           console.log("[Traffic] WebSocket 连接已建立");
         },
-      });
+      }, 10, secret);
 
       return () => {
         console.log("[Traffic] 清理WebSocket连接");
@@ -107,7 +107,7 @@ export const LayoutTraffic = () => {
 
       console.log(`[Memory] 正在连接: ${server}/memory`);
 
-      const s = createAuthSockette(`${server}/memory`, secret, {
+      const s = createSockette(`${server}/memory`, {
         timeout: 8000, // 8秒超时
         onmessage(event) {
           const data = JSON.parse(event.data) as MemoryUsage;
@@ -124,7 +124,7 @@ export const LayoutTraffic = () => {
         onopen(event) {
           console.log("[Memory] WebSocket 连接已建立");
         },
-      });
+      }, 10, secret);
 
       return () => {
         console.log("[Memory] 清理WebSocket连接");
